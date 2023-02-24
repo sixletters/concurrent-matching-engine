@@ -25,9 +25,9 @@ std::map<t_price, PriceLevel*>& Orderbook::_sameSide(const Side side) {
   }
 }
 
-void Orderbook::createOrder(const t_client client, const Side side, const t_qty qty, const t_price price) {
-  Order* pOrder = new Order(client, side, qty, price);
-  _allOrders.push_back(pOrder);
+void Orderbook::createOrder(const t_client client, const t_orderid ID, const Side side, const t_qty qty, const t_price price) {
+  Order* pOrder = new Order(client, ID, qty, price);
+  _allOrders[pOrder->ID] = pOrder;
 
   matchOrder(_oppSide(side), pOrder);
 
@@ -45,9 +45,9 @@ void Orderbook::createOrder(const t_client client, const Side side, const t_qty 
 }
 
 void Orderbook::cancelOrder(const t_client client, const t_orderid id) {
-  Order& order = *_allOrders.at(id);
-  if (order.client != client) return; // reject
-  order.cancel();
+  Order* pOrder = _allOrders[id];
+  if (pOrder->client != client) return; // reject
+  pOrder->cancel();
 }
 
 void Orderbook::matchOrder(std::map<t_price, PriceLevel*>& levels, Order* incomingOrder) {
