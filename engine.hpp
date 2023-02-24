@@ -5,8 +5,10 @@
 #define ENGINE_HPP
 
 #include <chrono>
+#include <unordered_map>
 
 #include "io.hpp"
+#include "orderbook.hpp"
 
 struct Engine
 {
@@ -15,6 +17,8 @@ public:
 
 private:
 	void connection_thread(ClientConnection conn);
+	std::unordered_map<std::string, Orderbook*> instrumentToOrderbookMap;
+
 };
 
 inline std::chrono::microseconds::rep getCurrentTimestamp() noexcept

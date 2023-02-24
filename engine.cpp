@@ -29,20 +29,24 @@ void Engine::connection_thread(ClientConnection connection)
 			case input_cancel: {
 				SyncCerr {} << "Got cancel: ID: " << input.order_id << std::endl;
 
-				// Remember to take timestamp at the appropriate time, or compute
-				// an appropriate timestamp!
+				t_client client = 0; // TODO
+				instrumentToOrderbookMap[input.instrument]->cancelOrder(client, input.order_id);
+
 				auto output_time = getCurrentTimestamp();
 				Output::OrderDeleted(input.order_id, true, output_time);
 				break;
 			}
 
-			default: {
+			case input_buy: case input_sell: {
 				SyncCerr {}
 				    << "Got order: " << static_cast<char>(input.type) << " " << input.instrument << " x " << input.count << " @ "
 				    << input.price << " ID: " << input.order_id << std::endl;
+				
+				// input.order_id ??
+				t_client client = 0; // TODO
+				Side side = input.type == input_buy ? Side::BUY : Side::SELL;
+				instrumentToOrderbookMap[input.instrument]->createOrder(client, side, input.count, input.price);
 
-				// Remember to take timestamp at the appropriate time, or compute
-				// an appropriate timestamp!
 				auto output_time = getCurrentTimestamp();
 				Output::OrderAdded(input.order_id, input.instrument, input.price, input.count, input.type == input_sell,
 				    output_time);
