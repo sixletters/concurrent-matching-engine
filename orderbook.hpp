@@ -2,20 +2,20 @@
 #include <string>
 #include <vector>
 #include <map>
-#include <queue>
 #include "order.hpp"
 #include "types.hpp"
+#include "pricelevel.hpp"
 
 class Orderbook {
   private:
-    std::map<t_price, std::queue<Order*>*> _bids;
-    std::map<t_price, std::queue<Order*>*> _asks;
+    std::map<t_price, PriceLevel*> _bids;
+    std::map<t_price, PriceLevel*> _asks;
     std::vector<Order*> _allOrders; 
 
-    std::map<t_price, std::queue<Order*>*>& _sameSide(const Side side);
-    std::map<t_price, std::queue<Order*>*>& _oppSide(const Side side);
+    std::map<t_price, PriceLevel*>& _sameSide(const Side side);
+    std::map<t_price, PriceLevel*>& _oppSide(const Side side);
 
-    static void matchOrder(std::map<t_price, std::queue<Order*>*>&, Order&);
+    static void matchOrder(std::map<t_price, PriceLevel*>&, Order*);
 
   public:
     const std::string symbol;

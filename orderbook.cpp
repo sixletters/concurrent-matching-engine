@@ -1,8 +1,3 @@
-#include <stdint.h>
-#include <string>
-#include <vector>
-#include "types.hpp"
-#include "order.hpp"
 #include "orderbook.hpp"
 
 Orderbook::Orderbook(const std::string symbol) : symbol(symbol) {}
@@ -14,7 +9,7 @@ void Orderbook::print() const {
   std::printf("----------------\n\n");
 }
 
-std::map<t_price, std::queue<Order*>*>& Orderbook::_oppSide(const Side side) {
+std::map<t_price, PriceLevel*>& Orderbook::_oppSide(const Side side) {
   switch (side) {
     case Side::BUY: return _asks;
     case Side::SELL: return _bids;
@@ -22,7 +17,7 @@ std::map<t_price, std::queue<Order*>*>& Orderbook::_oppSide(const Side side) {
   }
 }
 
-std::map<t_price, std::queue<Order*>*>& Orderbook::_sameSide(const Side side) {
+std::map<t_price, PriceLevel*>& Orderbook::_sameSide(const Side side) {
   switch (side) {
     case Side::BUY: return _bids;
     case Side::SELL: return _asks;
@@ -34,33 +29,36 @@ void Orderbook::createOrder(const t_client client, const Side side, const t_qty 
   Order* pOrder = new Order(client, side, qty, price);
   _allOrders.push_back(pOrder);
 
-  matchOrder(_oppSide(side), *pOrder);
+  matchOrder(_oppSide(side), pOrder);
 
   if (pOrder->isDone()) return;
 
-  std::map<t_price, std::queue<Order*>*>& levels = _sameSide(side);
+  std::map<t_price, PriceLevel*>& levels = _sameSide(side);
   auto it = levels.find(price);
-  if (it != levels.end()) {
-    it->second->push(pOrder);
-  } else {
-    // create new level
-    auto q = new std::queue<Order*>();
-    q->push(pOrder);
-    levels.insert(std::pair{price, q});
+  if (it != levels.end()) { // if price level exists
+    it->second->add(pOrder); 
+  } else { // create new level
+    auto level = new PriceLevel();
+    level->add(pOrder);
+    levels.insert(std::pair{price, level});
   }
 }
 
-/* lazy cancellation */
 void Orderbook::cancelOrder(const t_client client, const t_orderid id) {
   Order& order = *_allOrders.at(id);
-  if (order.client != client) {
-    // reject(*this, "Unauthorised");
-    return;
-  } 
+  if (order.client != client) return; // reject
   order.cancel();
 }
 
-/* matches order, O(n + m)
-  where n = number of orders, m = number of price levels */
-void Orderbook::matchOrder(std::map<t_price, std::queue<Order*>*>& levels, Order& incomingOrder) {
+void Orderbook::matchOrder(std::map<t_price, PriceLevel*>& levels, Order* incomingOrder) {
+  auto it = levels.begin();
+  while (it != levels.end() && incomingOrder->price >= it->first) {
+    it->second->fill(incomingOrder);
+    if (incomingOrder->isDone()) {
+      levels.erase(levels.begin(), it); // erase all empty levels
+      return;
+    };
+    it++;
+  }
+  levels.erase(levels.begin(), it);
 }
