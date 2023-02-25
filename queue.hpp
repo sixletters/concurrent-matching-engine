@@ -1,6 +1,7 @@
 #include <memory>
 #include <mutex>
 #include "order.hpp"
+#include <atomic>
 template<typename T>
 class Queue{
     private:
@@ -14,12 +15,13 @@ class Queue{
                 order_data = nullptr;
             };
         };
+        std::atomic<int> size;
         std::unique_ptr<Node> front_ptr;
         Node* back;
         std::mutex front_mutex;
         std::mutex back_mutex;
     public:
-    Queue(): front_ptr(new Node(nullptr)), back(front_ptr.get()){};
+    Queue(): front_ptr(new Node(nullptr)), back(front_ptr.get()), size(std::atomic<int>{0}){};
     // delete the copy constructor.
     Queue(const Queue&other)=delete;
     // delete the copy assignment operator.
@@ -30,6 +32,7 @@ class Queue{
         }
         std::unique_ptr<Node> old_front=std::move(front_ptr);
         front_ptr=std::move(old_front->next);
+        size.fetch_sub(1,std::memory_order_release);
     }
     void push(T order_data){
         std::unique_ptr<Node> p(new Node);
@@ -37,6 +40,7 @@ class Queue{
         back->order_data = order_data;
         back->next=std::move(p);
         back=new_back;
+        size.fetch_add(1,std::memory_order_release);
     };
     bool empty(){
         if(front_ptr.get() == back){
@@ -57,5 +61,9 @@ class Queue{
 
     std::mutex* getBackMutex(){
         return &back_mutex;
+    }
+
+    int getSize(){
+        return size.load;
     }
 };
