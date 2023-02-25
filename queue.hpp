@@ -7,21 +7,20 @@ class Queue{
         struct Node{
             T order_data;
             std::unique_ptr<Node> next;
-            Node(T* data_):
+            Node(T data_):
                 order_data(data_)
             {}
         };
         std::unique_ptr<Node> front;
         Node* back;
         std::mutex front_mutex;
-        std::mutex back_mutex
+        std::mutex back_mutex;
     public:
-    Queue(): front(new Node), back(front.get()){};
+    Queue(): front(new Node(nullptr)), back(front.get()){};
     // delete the copy constructor.
-    Queue(const queue&other)=delete;
+    Queue(const Queue&other)=delete;
     // delete the copy assignment operator.
-    Queue& operator=(const queue& other) = delete;
-     public:
+    Queue& operator=(const Queue& other) = delete;
     Node* get_back(){
         std::lock_guard<std::mutex> back_lock(back_mutex);
         return back;
