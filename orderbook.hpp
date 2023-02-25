@@ -3,25 +3,35 @@
 #include <vector>
 #include <map>
 #include <unordered_map>
+#include <mutex>
 #include "order.hpp"
 #include "types.hpp"
 #include "pricelevel.hpp"
 
+struct PriceComp {
+  bool ascending;
+  PriceComp(bool _ascending) : ascending(_ascending) {};
+  bool operator()(t_price lhs, t_price rhs) const {
+    return ascending ? lhs < rhs : lhs > rhs;
+  };
+};
+
+using PL_MAP = std::map<t_price, PriceLevel*, PriceComp>;
+
 class Orderbook {
   private:
-    std::map<t_price, PriceLevel*> _bids;
-    std::map<t_price, PriceLevel*> _asks;
+    PL_MAP _bids;
+    PL_MAP _asks;
     std::unordered_map<t_orderid, Order*> _allOrders; 
 
-    std::map<t_price, PriceLevel*>& _sameSide(const Side side);
-    std::map<t_price, PriceLevel*>& _oppSide(const Side side);
-
-    static void matchOrder(std::map<t_price, PriceLevel*>&, Order*);
+    PL_MAP& _sameSide(const SIDE side);
+    PL_MAP& _oppSide(const SIDE side);
+    std::mutex global_lock;
 
   public:
-    const std::string symbol;
+    const std::string instrument;
 
-    Orderbook(const std::string);
+    explicit Orderbook(const std::string);
     ~Orderbook() = default; 
 
     Orderbook(const Orderbook&) = delete; 
@@ -31,6 +41,6 @@ class Orderbook {
 
     void print() const;
 
-    void createOrder(const t_client, const t_orderid, const Side, const t_qty, const t_price);
+    void createOrder(const t_client, const t_orderid, const SIDE, const t_qty, const t_price);
     void cancelOrder(const t_client, const t_orderid);
 };

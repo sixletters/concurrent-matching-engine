@@ -13,10 +13,11 @@
 struct Engine
 {
 public:
-	void accept(ClientConnection conn);
+	void accept(ClientConnection);
 
 private:
-	void connection_thread(ClientConnection conn);
+	t_client client;
+	void connection_thread(ClientConnection, t_client);
 	std::unordered_map<std::string, Orderbook*> instrumentToOrderbookMap;
 
 };

@@ -6,11 +6,11 @@
 
 void Engine::accept(ClientConnection connection)
 {
-	auto thread = std::thread(&Engine::connection_thread, this, std::move(connection));
+	auto thread = std::thread(&Engine::connection_thread, this, std::move(connection), client);
 	thread.detach();
 }
 
-void Engine::connection_thread(ClientConnection connection)
+void Engine::connection_thread(ClientConnection connection, t_client client)
 {
 	while(true)
 	{
@@ -29,11 +29,7 @@ void Engine::connection_thread(ClientConnection connection)
 			case input_cancel: {
 				SyncCerr {} << "Got cancel: ID: " << input.order_id << std::endl;
 
-				t_client client = 0; // TODO
 				instrumentToOrderbookMap[input.instrument]->cancelOrder(client, input.order_id);
-
-				auto output_time = getCurrentTimestamp();
-				Output::OrderDeleted(input.order_id, true, output_time);
 				break;
 			}
 
@@ -42,25 +38,11 @@ void Engine::connection_thread(ClientConnection connection)
 				    << "Got order: " << static_cast<char>(input.type) << " " << input.instrument << " x " << input.count << " @ "
 				    << input.price << " ID: " << input.order_id << std::endl;
 				
-				// input.order_id ??
-				t_client client = 0; // TODO
-				Side side = input.type == input_buy ? Side::BUY : Side::SELL;
-				instrumentToOrderbookMap[input.instrument]->createOrder(client, side, input.count, input.price);
+				instrumentToOrderbookMap[input.instrument]->createOrder(client, 
+									input.order_id, SIDE(input.type), input.count, input.price);
 
-				auto output_time = getCurrentTimestamp();
-				Output::OrderAdded(input.order_id, input.instrument, input.price, input.count, input.type == input_sell,
-				    output_time);
 				break;
 			}
 		}
-
-		// Additionally:
-
-		// Remember to take timestamp at the appropriate time, or compute
-		// an appropriate timestamp!
-		intmax_t output_time = getCurrentTimestamp();
-
-		// Check the parameter names in `io.hpp`.
-		Output::OrderExecuted(123, 124, 1, 2000, 10, output_time);
 	}
 }

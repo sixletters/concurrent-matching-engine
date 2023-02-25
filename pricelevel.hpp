@@ -3,10 +3,13 @@
 
 class PriceLevel {
   private:
-    t_qty totalQty;
     std::queue<Order*> queue;
 
   public:
+    t_qty totalQty;
+
+    PriceLevel();
+
     void add(Order*);
     void fill(Order*);
 };

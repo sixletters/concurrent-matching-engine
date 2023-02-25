@@ -1,10 +1,21 @@
+#include <algorithm>
 #include "pricelevel.hpp"
 
-void PriceLevel::fill(Order* incomingOrder) {
+PriceLevel::PriceLevel() {
+  totalQty = 0;
+  // initialise threadsafe queue here
+};
+
+void PriceLevel::fill(Order* newOrder) {
+  t_qty fillQty = std::min(newOrder->qty, totalQty);
+  totalQty -= fillQty;
+  // new thread to acquire head lock
+  // main thread return
+  // new thread to continue execution
   Order* restingOrder;
-  while (!queue.empty() || !incomingOrder->isDone()) {
+  while (!queue.empty() || !newOrder->isDone()) {
     restingOrder = queue.front();
-    totalQty -= restingOrder->match(incomingOrder);
+    totalQty -= newOrder->match(restingOrder);
     if (restingOrder->isDone())
       queue.pop();
   }
@@ -12,5 +23,8 @@ void PriceLevel::fill(Order* incomingOrder) {
 
 void PriceLevel::add(Order* pOrder) {
   totalQty += pOrder->qty; 
+  // new thread to acquire tail lock
+  // main thread return
+  // new thread to continue execution
   queue.push(pOrder);
 }

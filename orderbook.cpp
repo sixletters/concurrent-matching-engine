@@ -1,6 +1,7 @@
 #include "orderbook.hpp"
+#include <stdexcept>
 
-Orderbook::Orderbook(const std::string symbol) : symbol(symbol) {}
+Orderbook::Orderbook(const std::string _instrument) : _bids(false), _asks(true), instrument(_instrument) {}
 
 /* Print orderbook state */
 void Orderbook::print() const {
@@ -9,56 +10,59 @@ void Orderbook::print() const {
   std::printf("----------------\n\n");
 }
 
-std::map<t_price, PriceLevel*>& Orderbook::_oppSide(const Side side) {
+PL_MAP& Orderbook::_oppSide(const SIDE side) {
   switch (side) {
-    case Side::BUY: return _asks;
-    case Side::SELL: return _bids;
-    // default: throw std::runtime_error("invalid side");
+    case SIDE::BUY: return _asks;
+    case SIDE::SELL: return _bids;
+    default: throw std::runtime_error("");
   }
 }
 
-std::map<t_price, PriceLevel*>& Orderbook::_sameSide(const Side side) {
+PL_MAP& Orderbook::_sameSide(const SIDE side) {
   switch (side) {
-    case Side::BUY: return _bids;
-    case Side::SELL: return _asks;
-    // default: throw std::runtime_error("invalid side");
+    case SIDE::BUY: return _bids;
+    case SIDE::SELL: return _asks;
+    default: throw std::runtime_error("");
   }
 }
 
-void Orderbook::createOrder(const t_client client, const t_orderid ID, const Side side, const t_qty qty, const t_price price) {
-  Order* pOrder = new Order(client, ID, qty, price);
-  _allOrders[pOrder->ID] = pOrder;
+void Orderbook::createOrder(const t_client client, const t_orderid ID, const SIDE side, const t_qty qty, const t_price price) {
+  std::lock_guard<std::mutex> lg(global_lock);
+  Order* newOrder = new Order(client, ID, side, qty, price);
+  _allOrders[ID] = newOrder;
 
-  matchOrder(_oppSide(side), pOrder);
+  // match order
+  {
+    PL_MAP& levels = _oppSide(side);
+    auto it = levels.begin();
+    while (it != levels.end() && newOrder->canMatchPrice(it->first)) {
+      PriceLevel* pl = it->second;
+      pl->fill(newOrder);
+      if (newOrder->isDone()) {
+        levels.erase(levels.begin(), it); // erase all empty levels
+        return;
+      };
+      it++;
+    }
+    levels.erase(levels.begin(), it); // erase all empty levels
+  }
 
-  if (pOrder->isDone()) return;
 
-  std::map<t_price, PriceLevel*>& levels = _sameSide(side);
-  auto it = levels.find(price);
-  if (it != levels.end()) { // if price level exists
-    it->second->add(pOrder); 
-  } else { // create new level
-    auto level = new PriceLevel();
-    level->add(pOrder);
-    levels.insert(std::pair{price, level});
+  // insert order if qty > 0
+  {
+    PL_MAP& levels = _sameSide(side);
+    auto it = levels.find(price);
+    if (it != levels.end()) { // if price level exists
+      it->second->add(newOrder); 
+    } else { // create new level
+      auto level = new PriceLevel(newOrder);
+      levels.insert(std::pair{price, level});
+    }
+    Output::OrderAdded(ID, instrument.c_str(), price, newOrder->qty, side, 420);
   }
 }
 
 void Orderbook::cancelOrder(const t_client client, const t_orderid id) {
-  Order* pOrder = _allOrders[id];
-  if (pOrder->client != client) return; // reject
-  pOrder->cancel();
-}
-
-void Orderbook::matchOrder(std::map<t_price, PriceLevel*>& levels, Order* incomingOrder) {
-  auto it = levels.begin();
-  while (it != levels.end() && incomingOrder->price >= it->first) {
-    it->second->fill(incomingOrder);
-    if (incomingOrder->isDone()) {
-      levels.erase(levels.begin(), it); // erase all empty levels
-      return;
-    };
-    it++;
-  }
-  levels.erase(levels.begin(), it);
+  std::lock_guard<std::mutex> lg(global_lock);
+  return _allOrders[id]->cancel();
 }
