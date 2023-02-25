@@ -24,13 +24,8 @@ class Queue{
     Queue(const Queue&other)=delete;
     // delete the copy assignment operator.
     Queue& operator=(const Queue& other) = delete;
-    Node* get_back(){
-        std::lock_guard<std::mutex> back_lock(back_mutex);
-        return back;
-    }
     void pop(){
-        std::lock_guard<std::mutex> front_lock(front_mutex);
-        if(front_ptr.get() == get_back()){
+        if(front_ptr.get() == back){
             return;
         }
         std::unique_ptr<Node> old_front=std::move(front_ptr);
@@ -45,8 +40,7 @@ class Queue{
         back=new_back;
     };
     bool empty(){
-        std::lock_guard<std::mutex> front_lock(front_mutex);
-        if(front_ptr.get() == get_back()){
+        if(front_ptr.get() == back){
             return true;
         }
         return false;

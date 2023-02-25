@@ -10,7 +10,7 @@ void Orderbook::print() const {
     auto it = _asks.rbegin();
     while (it != _asks.rend()) {
       std::cout << "$" << it->first << " x " << it->second->totalQty << "\n";
-      it--;
+      it++;
     }
   }
   std::printf("----------------\n");
