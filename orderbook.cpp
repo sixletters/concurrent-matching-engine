@@ -7,15 +7,17 @@ Orderbook::Orderbook(const std::string _instrument) : _bids(false), _asks(true),
 void Orderbook::print() const {
   std::printf("----------------\n");
   {
-    auto it = _asks.rend();
-    while (it != _asks.rbegin()) {
-      std::cout << "$" << it->first << " x " << it->second << "\n";
+    auto it = _asks.rbegin();
+    while (it != _asks.rend()) {
+      std::cout << "$" << it->first << " x " << it->second->totalQty << "\n";
+      it--;
     }
   }
   std::printf("----------------\n");
-    auto it = _asks.begin();
-    while (it != _asks.end()) {
-      std::cout << "$" << it->first << " x " << it->second << "\n";
+    auto it = _bids.begin();
+    while (it != _bids.end()) {
+      std::cout << "$" << it->first << " x " << it->second->totalQty << "\n";
+      it++;
     }
   std::printf("----------------\n\n");
 }
