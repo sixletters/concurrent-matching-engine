@@ -6,7 +6,7 @@
 
 void Engine::accept(ClientConnection connection)
 {
-	auto thread = std::thread(&Engine::connection_thread, this, std::move(connection), client);
+	auto thread = std::thread(&Engine::connection_thread, this, std::move(connection), client++);
 	thread.detach();
 }
 

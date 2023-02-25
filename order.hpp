@@ -21,7 +21,6 @@ class Order {
         Order(Order&& other)= delete;
         Order& operator=(Order&&) = delete;
 
-        t_qty match(Order* const); 
         void cancel();
         bool isDone() const;
         bool canMatchPrice(const t_price) const;
