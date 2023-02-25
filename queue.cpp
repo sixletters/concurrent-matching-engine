@@ -14,7 +14,7 @@ class Queue{
         std::unique_ptr<Node> old_front=std::move(front);
         front=std::move(old_front->next);
     }
-    void push(T* order_data){
+    void push(T order_data){
         std::unique_ptr<Node> p(new Node);
         Node* const new_back=p.get();
         std::lock_guard<std::mutex> back_lock(back_mutex);
@@ -29,7 +29,7 @@ class Queue{
         }
         return false;
     }
-    T* front(){
+    T front(){
         if(empty()){
             return nullptr;
         }
