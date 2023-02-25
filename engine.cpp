@@ -29,13 +29,6 @@ void Engine::connection_thread(ClientConnection connection, t_client client)
 			case input_cancel: {
 				SyncCerr {} << "Got cancel: ID: " << input.order_id << std::endl;
 
-				auto it = instrumentToOrderbookMap.find(input.instrument);
-				if (it == instrumentToOrderbookMap.end()) {
-					// reject
-					Output::OrderDeleted(input.order_id, false, 420);
-					break;
-				}
-
 				Orderbook* ob= it->second;
 				ob->print();
 				auto func = [](Orderbook* ob, t_client client, ClientCommand input){

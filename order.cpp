@@ -10,6 +10,8 @@ Order::Order(const t_client _client, const t_orderid _id, const SIDE _side,
 }
 
 void Order::cancel(const t_client _client) {
+    std::cout<<client<<std::endl;
+    std::cout<<_client<<std::endl;
   if (qty == 0 || client != _client) {
     Output::OrderDeleted(ID, false, 420);
     return;

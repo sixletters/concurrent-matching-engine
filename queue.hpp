@@ -34,7 +34,6 @@ class Queue{
     void push(T order_data){
         std::unique_ptr<Node> p(new Node);
         Node* const new_back=p.get();
-        std::lock_guard<std::mutex> back_lock(back_mutex);
         back->order_data = order_data;
         back->next=std::move(p);
         back=new_back;

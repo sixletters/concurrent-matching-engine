@@ -69,7 +69,7 @@ void Orderbook::createOrder(const t_client client, const t_orderid ID, const SID
       level->add(newOrder);
       levels.insert(std::pair{price, level});
     }
-    Output::OrderAdded(ID, instrument.c_str(), price, newOrder->qty, side, 420);
+    Output::OrderAdded(ID, instrument.c_str(), price, newOrder->qty, side==SIDE::SELL, 420);
   }
 }
 
