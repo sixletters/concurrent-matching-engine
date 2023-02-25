@@ -2,6 +2,7 @@
 
 template<typename T>
 class Queue{
+    public:
     Node* get_back(){
         std::lock_guard<std::mutex> back_lock(back_mutex);
         return back;
