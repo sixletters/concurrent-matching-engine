@@ -1,0 +1,25 @@
+Install Docker Desktop
+cd /path/to/code
+docker run --name 3211 -v $PWD:/3211 -it -d ubuntu /bin/bash
+docker exec 3211 bash -c "apt-get update && apt-get install clang-11 libc++-11-dev libc++abi-11-dev -y"
+docker exec 3211 {your clang++-11 command to compile under /3211 dir, with -stdlib flag}
+docker exec 3211 {your command to run stuff}
+Example compilation command:
+
+# Remember to use the libc++ we installed
+#   -stdlib=libc++
+# files are at /3211
+#   /3211/main.cpp \
+#   -o /3211/main
+
+docker exec 3211 \
+  clang++-11 -g -std=c++20 -pthread -O3 \
+  -Wpedantic -Wall -Wextra -Wconversion -Werror \
+  -stdlib=libc++ \
+  /3211/main.cpp \
+  -o /3211/main
+
+  example 
+  run command
+
+  docker exec 3211 /3211/main

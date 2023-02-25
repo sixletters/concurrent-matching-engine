@@ -1,10 +1,10 @@
 #include <algorithm>
-#include <order.hpp>
+#include "order.hpp"
 #include <stdexcept>
 
 Order::Order(const t_client _client, const t_orderid _id, const SIDE _side, 
               const t_qty _qty, const t_price _price) : 
-              ID(_id), client(_client), side(_side), price(_price) {
+              ID(_id), client(_client),price(_price), side(_side){
     qty = _qty;
     executionID = 0;
 }
