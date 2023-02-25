@@ -22,13 +22,12 @@ class Orderbook {
   private:
     PL_MAP _bids;
     PL_MAP _asks;
-    std::unordered_map<t_orderid, Order*> _allOrders; 
 
     PL_MAP& _sameSide(const SIDE side);
     PL_MAP& _oppSide(const SIDE side);
-    std::mutex global_lock;
 
   public:
+    std::mutex orderbookLock;
     const std::string instrument;
 
     explicit Orderbook(const std::string);
@@ -41,6 +40,5 @@ class Orderbook {
 
     void print() const;
 
-    void createOrder(const t_client, const t_orderid, const SIDE, const t_qty, const t_price);
-    void cancelOrder(const t_client, const t_orderid);
+    void createOrder(Order* const);
 };

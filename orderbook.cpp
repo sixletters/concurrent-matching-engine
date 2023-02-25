@@ -38,14 +38,12 @@ PL_MAP& Orderbook::_sameSide(const SIDE side) {
   }
 }
 
-void Orderbook::createOrder(const t_client client, const t_orderid ID, const SIDE side, const t_qty qty, const t_price price) {
-  std::lock_guard<std::mutex> lg(global_lock);
-  Order* newOrder = new Order(client, ID, side, qty, price);
-  _allOrders[ID] = newOrder;
+void Orderbook::createOrder(Order* const newOrder) {
+  std::lock_guard<std::mutex> lg(orderbookLock);
 
   // match order
   {
-    PL_MAP& levels = _oppSide(side);
+    PL_MAP& levels = _oppSide(newOrder->side);
     auto it = levels.begin();
     while (it != levels.end() && newOrder->canMatchPrice(it->first)) {
       PriceLevel* pl = it->second;
@@ -60,20 +58,15 @@ void Orderbook::createOrder(const t_client client, const t_orderid ID, const SID
 
   // insert order if qty > 0
   {
-    PL_MAP& levels = _sameSide(side);
-    auto it = levels.find(price);
+    PL_MAP& levels = _sameSide(newOrder->side);
+    auto it = levels.find(newOrder->price);
     if (it != levels.end()) { // if price level exists
       it->second->add(newOrder); 
     } else { // create new level
       auto level = new PriceLevel();
       level->add(newOrder);
-      levels.insert(std::pair{price, level});
+      levels.insert(std::pair{newOrder->price, level});
     }
-    Output::OrderAdded(ID, instrument.c_str(), price, newOrder->qty, side==SIDE::SELL, 420);
+    Output::OrderAdded(newOrder->ID, instrument.c_str(), newOrder->price, newOrder->qty, newOrder->side, 420);
   }
-}
-
-void Orderbook::cancelOrder(const t_client client, const t_orderid id) {
-  std::lock_guard<std::mutex> lg(global_lock);
-  return _allOrders[id]->cancel(client);
 }

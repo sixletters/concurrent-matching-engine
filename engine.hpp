@@ -17,6 +17,7 @@ public:
 
 private:
 	t_client client;
+  std::unordered_map<t_orderid, Order*> allOrders; 
 	void connection_thread(ClientConnection, t_client);
 	std::unordered_map<std::string, Orderbook*> instrumentToOrderbookMap;
 
