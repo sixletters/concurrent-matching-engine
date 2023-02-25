@@ -55,7 +55,8 @@ void Orderbook::createOrder(const t_client client, const t_orderid ID, const SID
     if (it != levels.end()) { // if price level exists
       it->second->add(newOrder); 
     } else { // create new level
-      auto level = new PriceLevel(newOrder);
+      auto level = new PriceLevel();
+      level.add(newOrder);
       levels.insert(std::pair{price, level});
     }
     Output::OrderAdded(ID, instrument.c_str(), price, newOrder->qty, side, 420);
