@@ -29,7 +29,18 @@ void Engine::connection_thread(ClientConnection connection, t_client client)
 			case input_cancel: {
 				SyncCerr {} << "Got cancel: ID: " << input.order_id << std::endl;
 
-				auto thread = std::thread(Orderbook::cancelOrder, instrumentToOrderbookMap[input.instrument], client, input.order_id);
+				auto it = instrumentToOrderbookMap.find(input.instrument);
+				if (it == instrumentToOrderbookMap.end()) {
+					// reject
+					Output::OrderDeleted(input.order_id, false, 420);
+					break;
+				}
+
+				Orderbook* ob= it->second;
+				auto func = [](Orderbook* ob, t_client client, ClientCommand input){
+					ob->cancelOrder(client, input.order_id);
+				};
+				auto thread = std::thread(func, ob, client, input);
 				thread.detach();
 				break;
 			}
@@ -39,8 +50,17 @@ void Engine::connection_thread(ClientConnection connection, t_client client)
 				    << "Got order: " << static_cast<char>(input.type) << " " << input.instrument << " x " << input.count << " @ "
 				    << input.price << " ID: " << input.order_id << std::endl;
 
-				auto thread = std::thread(Orderbook::createOrder, instrumentToOrderbookMap[input.instrument], 
-								client, input.order_id, SIDE(input.type), input.count, input.price);
+				auto it = instrumentToOrderbookMap.find(input.instrument);
+				if (it == instrumentToOrderbookMap.end()) {
+					instrumentToOrderbookMap[input.instrument] = new Orderbook(input.instrument);
+					it = instrumentToOrderbookMap.find(input.instrument);
+				}
+
+				Orderbook* ob= it->second;
+				auto func = [](Orderbook* ob, t_client client, ClientCommand input){
+					ob->createOrder(client, input.order_id, SIDE(input.type), input.count, input.price);
+				};
+				auto thread = std::thread(func, ob, client, input);
 				thread.detach();
 				break;
 			}
