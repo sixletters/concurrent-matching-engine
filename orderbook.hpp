@@ -41,4 +41,5 @@ class Orderbook {
     void print() const;
 
     void createOrder(Order* const);
+    void cancelOrder(Order* const, t_client client);
 };

@@ -67,6 +67,13 @@ void Orderbook::createOrder(Order* const newOrder) {
       level->add(newOrder);
       levels.insert(std::pair{newOrder->price, level});
     }
-    Output::OrderAdded(newOrder->ID, instrument.c_str(), newOrder->price, newOrder->qty, newOrder->side, 420);
+    Output::OrderAdded(newOrder->ID, instrument.c_str(), newOrder->price, newOrder->qty, newOrder->side == SIDE::SELL, 420);
   }
+}
+
+void Orderbook::cancelOrder(Order* order, t_client client) {
+  std::lock_guard<std::mutex> lg(orderbookLock);
+  PL_MAP& levels = _sameSide(order->side);
+  levels[order->price]->totalQty-=order->qty;
+  order->cancel(client);
 }
