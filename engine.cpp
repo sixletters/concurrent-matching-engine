@@ -39,6 +39,7 @@ void Engine::connection_thread(ClientConnection connection, t_client client)
 
 				Order* order = it->second;
 				Orderbook* ob = instrumentToOrderbookMap[order->instrument];
+				ob->print();
 				ob->cancelOrder(order, client);
 				break;
 			}
@@ -55,7 +56,7 @@ void Engine::connection_thread(ClientConnection connection, t_client client)
 				}
 
 				Orderbook* ob= it->second;
-				ob->print();
+				// ob->print();
 				auto func = [](Orderbook* ob, Order* newOrder){
 					ob->createOrder(newOrder);
 				};

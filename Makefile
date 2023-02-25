@@ -6,7 +6,7 @@ CXXFLAGS := $(CXXFLAGS) -g -O3 -Wall -Wextra -pedantic -Werror -std=c++20 -pthre
 
 BUILDDIR = build
 
-SRCS = main.cpp engine.cpp io.cpp orderbook.cpp order.cpp pricelevel.cpp
+SRCS = order.cpp pricelevel.cpp orderbook.cpp main.cpp engine.cpp io.cpp
 
 all: engine client
 

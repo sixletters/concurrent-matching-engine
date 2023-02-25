@@ -64,6 +64,6 @@ class Queue{
     }
 
     int getSize(){
-        return size.load;
+        return size.load();
     }
 };

@@ -1,3 +1,4 @@
+#include <stdint.h>
 #pragma once
 
 enum SIDE : char { BUY = 'B', SELL = 'S'};
