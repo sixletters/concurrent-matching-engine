@@ -58,7 +58,7 @@ void Engine::connection_thread(ClientConnection connection, t_client client)
 				auto func = [](Orderbook* ob, Order* newOrder){
 					ob->createOrder(newOrder);
 				};
-				auto thread = std::thread(func, ob, client, input);
+				auto thread = std::thread(func, ob, newOrder);
 				thread.detach();
 				break;
 			}

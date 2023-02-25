@@ -21,7 +21,7 @@ class Queue{
         std::mutex front_mutex;
         std::mutex back_mutex;
     public:
-    Queue(): front_ptr(new Node(nullptr)), back(front_ptr.get()), size(std::atomic<int>{0}){};
+    Queue(): size(std::atomic<int>{0}),front_ptr(new Node(nullptr)), back(front_ptr.get()){};
     // delete the copy constructor.
     Queue(const Queue&other)=delete;
     // delete the copy assignment operator.
