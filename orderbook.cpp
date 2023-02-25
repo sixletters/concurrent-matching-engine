@@ -6,7 +6,17 @@ Orderbook::Orderbook(const std::string _instrument) : _bids(false), _asks(true),
 /* Print orderbook state */
 void Orderbook::print() const {
   std::printf("----------------\n");
+  {
+    auto it = _asks.rend();
+    while (it != _asks.rbegin()) {
+      std::cout << "$" << it->first << " x " << it->second << "\n";
+    }
+  }
   std::printf("----------------\n");
+    auto it = _asks.begin();
+    while (it != _asks.end()) {
+      std::cout << "$" << it->first << " x " << it->second << "\n";
+    }
   std::printf("----------------\n\n");
 }
 

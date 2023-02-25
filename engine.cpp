@@ -37,6 +37,7 @@ void Engine::connection_thread(ClientConnection connection, t_client client)
 				}
 
 				Orderbook* ob= it->second;
+				ob->print();
 				auto func = [](Orderbook* ob, t_client client, ClientCommand input){
 					ob->cancelOrder(client, input.order_id);
 				};
@@ -57,6 +58,7 @@ void Engine::connection_thread(ClientConnection connection, t_client client)
 				}
 
 				Orderbook* ob= it->second;
+				ob->print();
 				auto func = [](Orderbook* ob, t_client client, ClientCommand input){
 					ob->createOrder(client, input.order_id, SIDE(input.type), input.count, input.price);
 				};
