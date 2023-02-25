@@ -63,5 +63,5 @@ void Orderbook::createOrder(const t_client client, const t_orderid ID, const SID
 
 void Orderbook::cancelOrder(const t_client client, const t_orderid id) {
   std::lock_guard<std::mutex> lg(global_lock);
-  return _allOrders[id]->cancel();
+  return _allOrders[id]->cancel(client);
 }

@@ -21,7 +21,7 @@ class Order {
         Order(Order&& other)= delete;
         Order& operator=(Order&&) = delete;
 
-        void cancel();
+        void cancel(const t_client);
         bool isDone() const;
         bool canMatchPrice(const t_price) const;
 };

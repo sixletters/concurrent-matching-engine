@@ -9,8 +9,8 @@ Order::Order(const t_client _client, const t_orderid _id, const SIDE _side,
     executionID = 0;
 }
 
-void Order::cancel() {
-  if (qty == 0) {
+void Order::cancel(const t_client _client) {
+  if (qty == 0 || client != _client) {
     Output::OrderDeleted(ID, false, 420);
     return;
   }
