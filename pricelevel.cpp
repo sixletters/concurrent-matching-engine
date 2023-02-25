@@ -9,22 +9,40 @@ PriceLevel::PriceLevel() {
 void PriceLevel::fill(Order* newOrder) {
   t_qty fillQty = std::min(newOrder->qty, totalQty);
   totalQty -= fillQty;
-  // new thread to acquire head lock
-  // main thread return
-  // new thread to continue execution
+  newOrder->qty -= fillQty;
+  std::binary_semaphore sem{0};
+	auto thread = std::thread(&PriceLevel::fillAsync, this, newOrder, fillQty, sem);
+	thread.detach();
+  sem.acquire();
+}
+
+void PriceLevel::fillAsync(Order* newOrder, t_qty levelFillQty, std::binary_semaphore& sem) {
+  std::lock_guard<std::mutex> lg(queue.getFrontLock());
+  sem.release(); // signal back to main thread
+
   Order* restingOrder;
-  while (!queue.empty() || !newOrder->isDone()) {
+  while (levelFillQty > 0) {
     restingOrder = queue.front();
-    totalQty -= newOrder->match(restingOrder);
-    if (restingOrder->isDone())
-      queue.pop();
+    t_qty fillQty = std::min(levelFillQty, restingOrder->qty);
+    levelFillQty -= fillQty;
+    restingOrder->qty -= fillQty;
+    restingOrder->executionID++;
+    Output::OrderExecuted(restingOrder->ID, newOrder->ID, restingOrder->executionID, restingOrder->price, fillQty, 420);
+    if (restingOrder->isDone()) queue.pop();
   }
 }
 
-void PriceLevel::add(Order* pOrder) {
-  totalQty += pOrder->qty; 
-  // new thread to acquire tail lock
-  // main thread return
-  // new thread to continue execution
-  queue.push(pOrder);
+void PriceLevel::add(Order* newOrder) {
+  totalQty += newOrder->qty; 
+  std::binary_semaphore sem{0};
+	auto thread = std::thread(&PriceLevel::fillAsync, this, newOrder, sem);
+	thread.detach();
+  sem.acquire();
+}
+
+void PriceLevel::addAsync(Order* newOrder, std::binary_semaphore& sem) {
+  std::lock_guard<std::mutex> lg(queue.getBackLock());
+  sem.release(); // signal back to main thread
+
+  queue.push(newOrder);
 }
