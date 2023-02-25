@@ -3,7 +3,6 @@
 
 PriceLevel::PriceLevel() {
   totalQty = 0;
-  // initialise threadsafe queue here
 };
 
 void PriceLevel::fill(Order* newOrder) {
@@ -17,7 +16,7 @@ void PriceLevel::fill(Order* newOrder) {
 }
 
 void PriceLevel::fillAsync(Order* newOrder, t_qty levelFillQty, std::binary_semaphore& sem) {
-  std::lock_guard<std::mutex> lg(queue.getFrontLock());
+  std::lock_guard<std::mutex> lg(queue.getFrontMutex());
   sem.release(); // signal back to main thread
 
   Order* restingOrder;
@@ -41,7 +40,7 @@ void PriceLevel::add(Order* newOrder) {
 }
 
 void PriceLevel::addAsync(Order* newOrder, std::binary_semaphore& sem) {
-  std::lock_guard<std::mutex> lg(queue.getBackLock());
+  std::lock_guard<std::mutex> lg(queue.getBackMutex());
   sem.release(); // signal back to main thread
 
   queue.push(newOrder);

@@ -4,7 +4,7 @@
 
 class PriceLevel {
   private:
-    std::queue<Order*> queue;
+    Queue<Order*> queue;
 
   public:
     t_qty totalQty;
