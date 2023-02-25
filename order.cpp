@@ -15,7 +15,7 @@ void Order::cancel() {
     return;
   }
   qty = 0;
-  Output::OrderDeleted(ID, false, 420);
+  Output::OrderDeleted(ID, true, 420);
 }
 
 bool Order::isDone() const { return qty == 0; }

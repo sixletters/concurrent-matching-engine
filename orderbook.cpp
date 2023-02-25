@@ -39,12 +39,10 @@ void Orderbook::createOrder(const t_client client, const t_orderid ID, const SID
       PriceLevel* pl = it->second;
       pl->fill(newOrder);
       if (newOrder->isDone()) {
-        levels.erase(levels.begin(), it); // erase all empty levels
         return;
       };
       it++;
     }
-    levels.erase(levels.begin(), it); // erase all empty levels
   }
 
 

@@ -1,7 +1,7 @@
 #include <algorithm>
 #include "pricelevel.hpp"
 
-PriceLevel::PriceLevel() {
+PriceLevel::PriceLevel() : queue(Queue<Order*>{}) {
   totalQty = 0;
 };
 
@@ -16,7 +16,7 @@ void PriceLevel::fill(Order* newOrder) {
 }
 
 void PriceLevel::fillAsync(Order* newOrder, t_qty levelFillQty, std::binary_semaphore& sem) {
-  std::lock_guard<std::mutex> lg(queue.getFrontMutex());
+  std::lock_guard<std::mutex> lg(*(queue.getFrontMutex()));
   sem.release(); // signal back to main thread
 
   Order* restingOrder;
@@ -40,7 +40,7 @@ void PriceLevel::add(Order* newOrder) {
 }
 
 void PriceLevel::addAsync(Order* newOrder, std::binary_semaphore& sem) {
-  std::lock_guard<std::mutex> lg(queue.getBackMutex());
+  std::lock_guard<std::mutex> lg(*(queue.getBackMutex()));
   sem.release(); // signal back to main thread
 
   queue.push(newOrder);

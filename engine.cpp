@@ -29,7 +29,8 @@ void Engine::connection_thread(ClientConnection connection, t_client client)
 			case input_cancel: {
 				SyncCerr {} << "Got cancel: ID: " << input.order_id << std::endl;
 
-				instrumentToOrderbookMap[input.instrument]->cancelOrder(client, input.order_id);
+				auto thread = std::thread(Orderbook::cancelOrder, instrumentToOrderbookMap[input.instrument], client, input.order_id);
+				thread.detach();
 				break;
 			}
 
@@ -37,10 +38,10 @@ void Engine::connection_thread(ClientConnection connection, t_client client)
 				SyncCerr {}
 				    << "Got order: " << static_cast<char>(input.type) << " " << input.instrument << " x " << input.count << " @ "
 				    << input.price << " ID: " << input.order_id << std::endl;
-				
-				instrumentToOrderbookMap[input.instrument]->createOrder(client, 
-									input.order_id, SIDE(input.type), input.count, input.price);
 
+				auto thread = std::thread(Orderbook::createOrder, instrumentToOrderbookMap[input.instrument], 
+								client, input.order_id, SIDE(input.type), input.count, input.price);
+				thread.detach();
 				break;
 			}
 		}
