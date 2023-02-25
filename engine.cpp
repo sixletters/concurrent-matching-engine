@@ -36,16 +36,15 @@ void Engine::connection_thread(ClientConnection connection, t_client client)
 				};
 
 				Order* order = it->second;
+				Orderbook* ob = instrumentToOrderbookMap[order->instrument];
+				std::lock_guard<std::mutex> lg(ob->orderbookLock);
 				order->cancel(client);
 				break;
 			}
 
 			case input_buy: case input_sell: {
-				SyncCerr {}
-				    << "Got order: " << static_cast<char>(input.type) << " " << input.instrument << " x " << input.count << " @ "
-				    << input.price << " ID: " << input.order_id << std::endl;
 
-				Order* newOrder = new Order(client, input.order_id, SIDE(input.type), input.count, input.price);
+				Order* newOrder = new Order(client, input.order_id, SIDE(input.type), input.instrument, input.count, input.price);
 				allOrders[input.order_id] = newOrder;
 
 				auto it = instrumentToOrderbookMap.find(input.instrument);
