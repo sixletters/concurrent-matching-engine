@@ -1,6 +1,8 @@
 #include <algorithm>
 #include "pricelevel.hpp"
 
+extern uint32_t TIMESTAMP;
+
 PriceLevel::PriceLevel() : queue(Queue<Order*>{}), 
   sem(std::binary_semaphore{0}), totalQty(0){};
 
@@ -24,7 +26,7 @@ void PriceLevel::fillAsync(Order* newOrder, t_qty levelFillQty) {
     levelFillQty -= fillQty;
     restingOrder->qty -= fillQty;
     restingOrder->executionID++;
-    Output::OrderExecuted(restingOrder->ID, newOrder->ID, restingOrder->executionID, restingOrder->price, fillQty, 420);
+    Output::OrderExecuted(restingOrder->ID, newOrder->ID, restingOrder->executionID, restingOrder->price, fillQty, TIMESTAMP);
     if (restingOrder->isDone()) queue.pop();
   }
 }

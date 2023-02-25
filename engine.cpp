@@ -4,6 +4,8 @@
 #include "io.hpp"
 #include "engine.hpp"
 
+uint32_t TIMESTAMP = 0;
+
 void Engine::accept(ClientConnection connection)
 {
 	auto thread = std::thread(&Engine::connection_thread, this, std::move(connection), client++);
@@ -31,7 +33,7 @@ void Engine::connection_thread(ClientConnection connection, t_client client)
 
 				auto it = allOrders.find(input.order_id);
 				if (it == allOrders.end()) {
-					Output::OrderDeleted(input.order_id, false, 420);
+					Output::OrderDeleted(input.order_id, false, TIMESTAMP++);
 					break;
 				};
 

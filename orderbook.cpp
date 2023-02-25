@@ -1,6 +1,8 @@
 #include "orderbook.hpp"
 #include <stdexcept>
 
+extern uint32_t TIMESTAMP;
+
 Orderbook::Orderbook(const std::string _instrument) : _bids(false), _asks(true), instrument(_instrument) {}
 
 /* Print orderbook state */
@@ -52,6 +54,7 @@ void Orderbook::createOrder(Order* const newOrder) {
         return;
       };
       it++;
+      TIMESTAMP++;
     }
   }
 
@@ -67,7 +70,7 @@ void Orderbook::createOrder(Order* const newOrder) {
       level->add(newOrder);
       levels.insert(std::pair{newOrder->price, level});
     }
-    Output::OrderAdded(newOrder->ID, instrument.c_str(), newOrder->price, newOrder->qty, newOrder->side == SIDE::SELL, 420);
+    Output::OrderAdded(newOrder->ID, instrument.c_str(), newOrder->price, newOrder->qty, newOrder->side == SIDE::SELL, TIMESTAMP++);
   }
 }
 
