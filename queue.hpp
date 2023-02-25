@@ -11,20 +11,20 @@ class Queue{
                 order_data(data_)
             {}
         };
-        Node* front;
+        std::unique_ptr<Node> front;
         Node* back;
-        std::mutex head_mutex;
-        std::mutex tail_mutex
+        std::mutex front_mutex;
+        std::mutex back_mutex
     public:
     Queue(): front(new Node), back(front.get()){};
-    // delete the copy assignment operator
+    // delete the copy constructor.
     Queue(const queue&other)=delete;
+    // delete the copy assignment operator.
     Queue& operator=(const queue& other) = delete;
-    std::mutex* getHeadMutex();
-    std::mutex* getTailMutex();
+    std::mutex* getFrontMutex();
+    std::mutex* getBackMutex();
     void pop();
     void push(T*);
     T& front();
-    int size();
     bool empty();
 };
