@@ -1,14 +1,13 @@
-#include <memory>
 #include <mutex>
-#include "order.hpp"
 #include <atomic>
+#include <stdexcept>
+
 template<typename T>
 class Queue{
   private:
     struct Node{
       T data;
       std::unique_ptr<Node> next;
-      Node() { data = nullptr; } // dummy
     };
     std::unique_ptr<Node> pFront;
     Node* pBack;
@@ -37,18 +36,18 @@ class Queue{
       pBack = (pBack->next).get();
     };
 
-    bool empty() { return pFront.get() == pBack; } 
+    bool empty() const { return pFront.get() == pBack; } 
 
-    T front(){
-      if (empty()) return nullptr;
+    T front() const {
+      if (empty()) throw std::runtime_error("front() called on empty queue");
       return pFront->data;
     }
 
-    std::mutex* getFrontMutex(){
-      return &frontMutex;
-    }
+    std::mutex& getFrontMutex() {
+      return frontMutex;
+     }
 
-    std::mutex* getBackMutex(){
-      return &backMutex;
+    std::mutex& getBackMutex() {
+      return backMutex;
     } 
 };

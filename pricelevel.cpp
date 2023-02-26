@@ -8,7 +8,7 @@ void PriceLevel::fill(Order* const newOrder, const uint32_t timestamp) {
   t_qty fillQty = std::min(newOrder->qty, totalQty);
   totalQty -= fillQty;
   newOrder->qty -= fillQty;
-  queue.getFrontMutex()->lock();
+  queue.getFrontMutex().lock();
 	auto thread = std::thread(&PriceLevel::fillAsync, this, newOrder, fillQty, timestamp);
 	thread.detach();
 }
@@ -24,12 +24,12 @@ void PriceLevel::fillAsync(Order* const newOrder, t_qty levelFillQty, const uint
     Output::OrderExecuted(restingOrder->ID, newOrder->ID, restingOrder->executionID, restingOrder->price, fillQty, timestamp);
     if (restingOrder->qty == 0) queue.pop();
   }
-  queue.getFrontMutex()->unlock();
+  queue.getFrontMutex().unlock();
 }
 
 void PriceLevel::add(Order* newOrder, const uint32_t timestamp) {
   totalQty += newOrder->qty; 
-  queue.getBackMutex()->lock();
+  queue.getBackMutex().lock();
 	auto thread = std::thread(&PriceLevel::addAsync, this, newOrder, timestamp);
 	thread.detach();
 }
@@ -37,11 +37,11 @@ void PriceLevel::add(Order* newOrder, const uint32_t timestamp) {
 void PriceLevel::addAsync(Order* newOrder, const uint32_t timestamp) { 
   queue.push(newOrder); 
   Output::OrderAdded(newOrder->ID, newOrder->instrument.c_str(), newOrder->price, newOrder->qty, newOrder->side == SIDE::SELL, timestamp);
-  queue.getBackMutex()->unlock();
+  queue.getBackMutex().unlock();
 }
 
 void PriceLevel::cancel(Order* order, const uint32_t timestamp) {
-  std::lock_guard<std::mutex> lg(*queue.getFrontMutex()); // make sure no other thread is filling
+  std::lock_guard<std::mutex> lg(queue.getFrontMutex()); // make sure no other thread is filling
   if (order->qty == 0) { // if done
     Output::OrderDeleted(order->ID, false, timestamp);
     return;
