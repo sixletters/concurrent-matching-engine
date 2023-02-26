@@ -6,7 +6,7 @@
 #include "io.hpp"
 #include "engine.hpp"
 
-std::atomic<uint32_t> TIMESTAMP = 0;
+std::atomic<uint32_t> TIMESTAMP{0};
 
 void Engine::accept(ClientConnection connection)
 {
@@ -27,7 +27,7 @@ void Engine::connection_thread(ClientConnection connection, t_client client)
 		}
 
 		
-		TIMESTAMP.fetch_add(1, std::memory_order_seq_cst);
+		uint32_t refTime = TIMESTAMP.fetch_add(1, std::memory_order_seq_cst);
 
 		// Functions for printing output actions in the prescribed format are
 		// provided in the Output class:
@@ -38,7 +38,7 @@ void Engine::connection_thread(ClientConnection connection, t_client client)
 				auto it = allOrders.find(input.order_id);
 				Order* order = it->second;
 				if (it == allOrders.end() || order->client != client) {
-					Output::OrderDeleted(input.order_id, false, TIMESTAMP.load());
+					Output::OrderDeleted(input.order_id, false, refTime);
 					break;
 				};
 
@@ -62,7 +62,7 @@ void Engine::connection_thread(ClientConnection connection, t_client client)
 
 				Orderbook* ob= it->second;
 				// ob->print();
-				std::thread t = std::thread(&Orderbook::createOrder, ob, newOrder, TIMESTAMP.load());
+				std::thread t = std::thread(&Orderbook::createOrder, ob, newOrder, refTime);
 				t.detach();
 				break;
 			}
