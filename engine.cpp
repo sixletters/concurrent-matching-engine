@@ -36,7 +36,7 @@ void Engine::connection_thread(ClientConnection connection, t_client client)
 				// if ID not found || wrong client || done
 				auto it = allOrders.find(input.order_id);
 				Order* order = it->second;
-				if (it == allOrders.end() || order->client != client || order->qty == 0) {
+				if (it == allOrders.end() || order->client != client) {
 					Output::OrderDeleted(input.order_id, false, TIMESTAMP.load());
 					break;
 				};

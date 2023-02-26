@@ -73,6 +73,10 @@ void Orderbook::createOrder(Order* const newOrder, uint32_t timestamp) {
 
 void Orderbook::cancelOrder(Order* order, uint32_t timestamp) {
   std::lock_guard<std::mutex> lg(orderbookLock);
+  if (order->qty == 0) { // if done
+    Output::OrderDeleted(order->ID, false, timestamp);
+    return;
+  }
   PL_MAP& levels = _sameSide(order->side);
   levels[order->price]->totalQty-=order->qty;
   order->qty = 0;
