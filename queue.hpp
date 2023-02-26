@@ -4,55 +4,46 @@
 #include <atomic>
 template<typename T>
 class Queue{
-    private:
-        struct Node{
-            T order_data;
-            std::unique_ptr<Node> next;
-            Node(T data_):
-                order_data(data_)
-            {};
-            Node() {
-                order_data = nullptr;
-            };
-        };
-        std::atomic<int> size;
-        std::unique_ptr<Node> front_ptr;
-        Node* back;
-        std::mutex front_mutex;
-        std::mutex back_mutex;
-    public:
-    Queue(): size(std::atomic<int>{0}),front_ptr(new Node(nullptr)), back(front_ptr.get()){};
-    // delete the copy constructor.
-    Queue(const Queue&other)=delete;
-    // delete the copy assignment operator.
-    Queue& operator=(const Queue& other) = delete;
-    void pop(){
-        if(front_ptr.get() == back){
-            return;
-        }
-        std::unique_ptr<Node> old_front=std::move(front_ptr);
-        front_ptr=std::move(old_front->next);
-        size.fetch_sub(1,std::memory_order_release);
-    }
-    void push(T order_data){
-        std::unique_ptr<Node> p(new Node);
-        Node* const new_back=p.get();
-        back->order_data = order_data;
-        back->next=std::move(p);
-        back=new_back;
-        size.fetch_add(1,std::memory_order_release);
+  private:
+    struct Node{
+        T data;
+        std::unique_ptr<Node> next;
+        Node() { data = nullptr; } // dummy
     };
-    bool empty(){
-        if(front_ptr.get() == back){
-            return true;
-        }
-        return false;
+    std::unique_ptr<Node> pFront;
+    Node* pBack;
+    std::mutex front_mutex;
+    std::mutex back_mutex;
+
+  public:
+    Queue(): pFront(new Node()), pBack(pFront.get()){};
+    ~Queue() = default;
+
+    Queue(const Queue&) = delete;
+    Queue& operator=(const Queue&) = delete;
+    Queue(Queue&&) = delete;
+    Queue& operator=(Queue&&) = delete;
+
+    void pop() {
+        if (pFront.get() == pBack) return;
+        std::unique_ptr<Node> old_front = std::move(pFront);
+        pFront = std::move(old_front->next);
     }
+
+    void push(T data) {
+        std::unique_ptr<Node> p(new Node());
+        pBack->data = data;
+        pBack->next = std::move(p);
+        pBack = (pBack->next).get();
+    };
+
+    bool empty() { return pFront.get() == pBack; } 
+
     T front(){
-        if(empty()){
+        if (empty()){
             return nullptr;
         }
-        return front_ptr->order_data;
+        return pFront->data;
     }
 
     std::mutex* getFrontMutex(){
@@ -61,9 +52,5 @@ class Queue{
 
     std::mutex* getBackMutex(){
         return &back_mutex;
-    }
-
-    int getSize(){
-        return size.load();
-    }
+    } 
 };
