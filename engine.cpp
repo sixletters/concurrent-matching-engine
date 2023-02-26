@@ -42,13 +42,9 @@ void Engine::connection_thread(ClientConnection connection, t_client client)
 					break;
 				};
 
-				Orderbook* ob = instrumentToOrderbookMap[order->instrument];
-
-				auto func = [](Orderbook* ob, Order* order, auto t){
-					ob->cancelOrder(order, t);
-				};
-				auto thread = std::thread(func, ob, order, TIMESTAMP.load());
-				thread.detach();
+				Orderbook* ob = instrumentToOrderbookMap[order->instrument]; 
+				std::thread t = std::thread(&Orderbook::cancelOrder, ob, order, TIMESTAMP.load());
+				t.detach();
 				break;
 			}
 
@@ -66,11 +62,8 @@ void Engine::connection_thread(ClientConnection connection, t_client client)
 
 				Orderbook* ob= it->second;
 				// ob->print();
-				auto func = [](Orderbook* ob, Order* newOrder, auto t){
-					ob->createOrder(newOrder, t);
-				};
-				auto thread = std::thread(func, ob, newOrder, TIMESTAMP.load());
-				thread.detach();
+				std::thread t = std::thread(&Orderbook::createOrder, ob, newOrder, TIMESTAMP.load());
+				t.detach();
 				break;
 			}
 		}
