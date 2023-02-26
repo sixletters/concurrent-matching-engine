@@ -19,7 +19,7 @@ class Order {
 
         Order(const Order&) = delete; 
         Order& operator=(const Order&) = delete;
-        Order(Order&& other)= delete;
+        Order(Order&&)= delete;
         Order& operator=(Order&&) = delete;
 
         void cancel(const t_client);

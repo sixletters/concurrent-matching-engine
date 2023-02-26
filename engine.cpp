@@ -39,7 +39,7 @@ void Engine::connection_thread(ClientConnection connection, t_client client)
 
 				Order* order = it->second;
 				Orderbook* ob = instrumentToOrderbookMap[order->instrument];
-				ob->print();
+				// ob->print();
 				ob->cancelOrder(order, client);
 				break;
 			}
