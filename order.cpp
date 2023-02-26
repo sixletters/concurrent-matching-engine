@@ -1,6 +1,6 @@
 #include <algorithm>
-#include "order.hpp"
 #include <stdexcept>
+#include "order.hpp"
 
 Order::Order( const t_client _client, const t_orderid _id, const SIDE _side, const std::string _instrument,
               const t_qty _qty, const t_price _price) : 

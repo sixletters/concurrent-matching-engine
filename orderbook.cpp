@@ -5,19 +5,18 @@ Orderbook::Orderbook(const std::string _instrument) : _bids(false), _asks(true),
 
 /* Print orderbook state */
 void Orderbook::print() const {
+  std::string output = "";
   {
-    auto it = _asks.rbegin();
-    while (it != _asks.rend()) {
-      SyncCerr {} << "$" << it->first << " x " << it->second->totalQty << "\n";
-      it++;
+    for (auto it = _asks.rbegin(); it != _asks.rend(); it++) {
+      output += "$" + std::to_string(it->first) + " x " + it->second->str();
     }
   }
     SyncCerr {} << "----------------------\n";
-    auto it = _bids.begin();
-    while (it != _bids.end()) {
-      SyncCerr {} << "$" << it->first << " x " << it->second->totalQty << "\n";
-      it++;
+  {
+    for (auto it = _bids.begin(); it != _bids.end(); it++) {
+      output += "$" + std::to_string(it->first) + " x " + it->second->str();
     }
+  }
 }
 
 PL_MAP& Orderbook::_oppSide(const SIDE side) {
@@ -67,12 +66,5 @@ void Orderbook::createOrder(Order* const newOrder, uint32_t timestamp) {
 void Orderbook::cancelOrder(Order* order, uint32_t timestamp) {
   std::lock_guard<FIFOMutex> lg(orderbookLock);
   PriceLevel* pl = _sameSide(order->side)[order->price];
-  std::lock_guard<std::mutex> lgfront(*(pl->queue.getFrontMutex())); // make sure no other thread is filling
-  if (order->qty == 0) { // if done
-    Output::OrderDeleted(order->ID, false, timestamp);
-    return;
-  }
-  pl->totalQty -= order->qty;
-  order->qty = 0;
-  Output::OrderDeleted(order->ID, true, timestamp);
+  pl->cancel(order, timestamp);
 }

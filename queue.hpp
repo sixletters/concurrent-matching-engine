@@ -12,8 +12,8 @@ class Queue{
     };
     std::unique_ptr<Node> pFront;
     Node* pBack;
-    std::mutex front_mutex;
-    std::mutex back_mutex;
+    std::mutex frontMutex;
+    std::mutex backMutex;
 
   public:
     Queue(): pFront(new Node()), pBack(pFront.get()){};
@@ -45,10 +45,10 @@ class Queue{
     }
 
     std::mutex* getFrontMutex(){
-      return &front_mutex;
+      return &frontMutex;
     }
 
     std::mutex* getBackMutex(){
-      return &back_mutex;
+      return &backMutex;
     } 
 };
