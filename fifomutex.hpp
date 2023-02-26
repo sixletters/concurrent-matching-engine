@@ -21,10 +21,8 @@ class FIFOMutex {
 
 
 	void unlock() {
-	    std::unique_lock<std::mutex> lk{m};
+	    std::lock_guard<std::mutex> lk{m};
 	    queue_head++;
 	    cv.notify_all();
-	    lk.unlock();
 	}
 }; 
-

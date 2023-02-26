@@ -3,10 +3,8 @@
 #include <thread>
 
 class PriceLevel {
-  private:
-    Queue<Order*> queue;
-
   public:
+    Queue<Order*> queue;
     t_qty totalQty;
 
     PriceLevel();

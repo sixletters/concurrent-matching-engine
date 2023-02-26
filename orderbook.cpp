@@ -37,7 +37,7 @@ PL_MAP& Orderbook::_sameSide(const SIDE side) {
 }
 
 void Orderbook::createOrder(Order* const newOrder, uint32_t timestamp) {
-	orderbookLock.lock(); 
+  std::lock_guard<FIFOMutex> lg(orderbookLock);
   // match order
   {
     PL_MAP& levels = _oppSide(newOrder->side);
@@ -45,10 +45,7 @@ void Orderbook::createOrder(Order* const newOrder, uint32_t timestamp) {
     while (it != levels.end() && newOrder->canMatchPrice(it->first)) {
       PriceLevel* pl = it->second;
       pl->fill(newOrder, timestamp++);
-      if (newOrder->qty == 0) {
-	orderbookLock.unlock();
-        return;
-      };
+      if (newOrder->qty == 0) return;
       it++;
     }
   } 
@@ -66,20 +63,17 @@ void Orderbook::createOrder(Order* const newOrder, uint32_t timestamp) {
     }
     Output::OrderAdded(newOrder->ID, instrument.c_str(), newOrder->price, newOrder->qty, newOrder->side == SIDE::SELL, timestamp);
   }
-
-	orderbookLock.unlock();
 }
 
 void Orderbook::cancelOrder(Order* order, uint32_t timestamp) {
-	orderbookLock.lock();
+  std::lock_guard<FIFOMutex> lg(orderbookLock);
+  PriceLevel* pl = _sameSide(order->side)[order->price];
+  std::lock_guard<std::mutex> lg(*(pl->queue.getFrontMutex())); // make sure no other thread is filling
   if (order->qty == 0) { // if done
-    	Output::OrderDeleted(order->ID, false, timestamp);
-	orderbookLock.unlock();
-	return;
+    Output::OrderDeleted(order->ID, false, timestamp);
+    return;
   }
-  PL_MAP& levels = _sameSide(order->side);
-  levels[order->price]->totalQty-=order->qty;
+  pl->totalQty -= order->qty;
   order->qty = 0;
   Output::OrderDeleted(order->ID, true, timestamp);
-  orderbookLock.unlock();
 }
