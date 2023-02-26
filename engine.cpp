@@ -61,7 +61,6 @@ void Engine::connection_thread(ClientConnection connection, t_client client)
 				}
 
 				Orderbook* ob= it->second;
-				// ob->print();
 				std::thread t = std::thread(&Orderbook::createOrder, ob, newOrder, refTime);
 				t.detach();
 				break;

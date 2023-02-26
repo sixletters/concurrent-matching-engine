@@ -5,19 +5,20 @@ Orderbook::Orderbook(const std::string _instrument) : _bids(false), _asks(true),
 
 /* Print orderbook state */
 void Orderbook::print() const {
-  std::string output = "";
+  std::string output = "[ ";
   {
     for (auto it = _asks.rbegin(); it != _asks.rend(); it++) {
-      output += "$" + std::to_string(it->first) + " x " + it->second->str() + ", ";
+      output += "$" + std::to_string(it->first) + "x" + it->second->str() + ", ";
     }
   }
     output += " | ";
   {
     for (auto it = _bids.begin(); it != _bids.end(); it++) {
-      output += "$" + std::to_string(it->first) + " x " + it->second->str() + ", ";
+      output += "$" + std::to_string(it->first) + "x" + it->second->str() + ", ";
     }
   }
-  SyncCerr {} << output;
+  output += "]";
+  SyncCerr {} << output << std::endl;
 }
 
 PRICELEVELMAP& Orderbook::_oppSide(const SIDE side) {
@@ -62,10 +63,12 @@ void Orderbook::createOrder(Order* const newOrder, uint32_t timestamp) {
       levelsMap.insert(std::pair{newOrder->price, level});
     } 
   }
+  print();
 }
 
 void Orderbook::cancelOrder(Order* order, uint32_t timestamp) {
   std::lock_guard<FIFOMutex> lg(orderbookLock);
   PriceLevel* level = _sameSide(order->side)[order->price];
   level->cancel(order, timestamp);
+  print();
 }
