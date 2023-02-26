@@ -37,7 +37,7 @@ void Engine::connection_thread(ClientConnection connection, t_client client)
 				auto it = allOrders.find(input.order_id);
 				Order* order = it->second;
 				if (it == allOrders.end() || order->client != client || order->qty == 0) {
-					Output::OrderDeleted(input.order_id, false, TIMESTAMP);
+					Output::OrderDeleted(input.order_id, false, TIMESTAMP.load());
 					break;
 				};
 
@@ -46,7 +46,7 @@ void Engine::connection_thread(ClientConnection connection, t_client client)
 				auto func = [](Orderbook* ob, Order* order, auto t){
 					ob->cancelOrder(order, t);
 				};
-				auto thread = std::thread(func, ob, order, TIMESTAMP);
+				auto thread = std::thread(func, ob, order, TIMESTAMP.load());
 				thread.detach();
 				break;
 			}
@@ -70,7 +70,7 @@ void Engine::connection_thread(ClientConnection connection, t_client client)
 				auto func = [](Orderbook* ob, Order* newOrder, auto t){
 					ob->createOrder(newOrder, t);
 				};
-				auto thread = std::thread(func, ob, newOrder, TIMESTAMP);
+				auto thread = std::thread(func, ob, newOrder, TIMESTAMP.load());
 				thread.detach();
 				break;
 			}
