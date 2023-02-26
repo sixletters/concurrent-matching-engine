@@ -5,21 +5,19 @@ Orderbook::Orderbook(const std::string _instrument) : _bids(false), _asks(true),
 
 /* Print orderbook state */
 void Orderbook::print() const {
-  std::printf("----------------\n");
   {
     auto it = _asks.rbegin();
     while (it != _asks.rend()) {
-      std::cout << "$" << it->first << " x " << it->second->totalQty << "\n";
+      SyncCerr {} << "$" << it->first << " x " << it->second->totalQty << "\n";
       it++;
     }
   }
-  std::printf("----------------\n");
+    SyncCerr {} << "----------------------\n";
     auto it = _bids.begin();
     while (it != _bids.end()) {
-      std::cout << "$" << it->first << " x " << it->second->totalQty << "\n";
+      SyncCerr {} << "$" << it->first << " x " << it->second->totalQty << "\n";
       it++;
     }
-  std::printf("----------------\n\n");
 }
 
 PL_MAP& Orderbook::_oppSide(const SIDE side) {
@@ -39,8 +37,7 @@ PL_MAP& Orderbook::_sameSide(const SIDE side) {
 }
 
 void Orderbook::createOrder(Order* const newOrder, uint32_t timestamp) {
-	orderbookLock.lock();
-
+	orderbookLock.lock(); 
   // match order
   {
     PL_MAP& levels = _oppSide(newOrder->side);
@@ -54,8 +51,7 @@ void Orderbook::createOrder(Order* const newOrder, uint32_t timestamp) {
       };
       it++;
     }
-  }
-
+  } 
 
   // insert order if qty > 0
   {
