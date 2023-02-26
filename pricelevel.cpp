@@ -1,21 +1,19 @@
 #include <algorithm>
 #include "pricelevel.hpp"
 
-extern uint32_t TIMESTAMP;
-
 PriceLevel::PriceLevel() : queue(Queue<Order*>{}), 
   sem(std::binary_semaphore{0}), totalQty(0){};
 
-void PriceLevel::fill(Order* newOrder) {
+void PriceLevel::fill(Order* const newOrder, const uint32_t timestamp) {
   t_qty fillQty = std::min(newOrder->qty, totalQty);
   totalQty -= fillQty;
   newOrder->qty -= fillQty;
-	auto thread = std::thread(&PriceLevel::fillAsync, this, newOrder, fillQty);
+	auto thread = std::thread(&PriceLevel::fillAsync, this, newOrder, fillQty, timestamp);
 	thread.detach();
   sem.acquire();
 }
 
-void PriceLevel::fillAsync(Order* newOrder, t_qty levelFillQty) {
+void PriceLevel::fillAsync(Order* const newOrder, t_qty levelFillQty, const uint32_t timestamp) {
   std::lock_guard<std::mutex> lg(*(queue.getFrontMutex()));
   sem.release(); // signal back to main thread
 
@@ -26,8 +24,8 @@ void PriceLevel::fillAsync(Order* newOrder, t_qty levelFillQty) {
     levelFillQty -= fillQty;
     restingOrder->qty -= fillQty;
     restingOrder->executionID++;
-    Output::OrderExecuted(restingOrder->ID, newOrder->ID, restingOrder->executionID, restingOrder->price, fillQty, TIMESTAMP);
-    if (restingOrder->isDone()) queue.pop();
+    Output::OrderExecuted(restingOrder->ID, newOrder->ID, restingOrder->executionID, restingOrder->price, fillQty, timestamp);
+    if (restingOrder->qty == 0) queue.pop();
   }
 }
 

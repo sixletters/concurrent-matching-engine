@@ -1,8 +1,6 @@
 #include "orderbook.hpp"
 #include <stdexcept>
 
-extern uint32_t TIMESTAMP;
-
 Orderbook::Orderbook(const std::string _instrument) : _bids(false), _asks(true), instrument(_instrument) {}
 
 /* Print orderbook state */
@@ -40,7 +38,7 @@ PL_MAP& Orderbook::_sameSide(const SIDE side) {
   }
 }
 
-void Orderbook::createOrder(Order* const newOrder) {
+void Orderbook::createOrder(Order* const newOrder, uint32_t timestamp) {
   std::lock_guard<std::mutex> lg(orderbookLock);
 
   // match order
@@ -49,12 +47,11 @@ void Orderbook::createOrder(Order* const newOrder) {
     auto it = levels.begin();
     while (it != levels.end() && newOrder->canMatchPrice(it->first)) {
       PriceLevel* pl = it->second;
-      pl->fill(newOrder);
-      if (newOrder->isDone()) {
+      pl->fill(newOrder, timestamp++);
+      if (newOrder->qty == 0) {
         return;
       };
       it++;
-      TIMESTAMP++;
     }
   }
 
@@ -70,13 +67,14 @@ void Orderbook::createOrder(Order* const newOrder) {
       level->add(newOrder);
       levels.insert(std::pair{newOrder->price, level});
     }
-    Output::OrderAdded(newOrder->ID, instrument.c_str(), newOrder->price, newOrder->qty, newOrder->side == SIDE::SELL, TIMESTAMP++);
+    Output::OrderAdded(newOrder->ID, instrument.c_str(), newOrder->price, newOrder->qty, newOrder->side == SIDE::SELL, timestamp);
   }
 }
 
-void Orderbook::cancelOrder(Order* order, t_client client) {
+void Orderbook::cancelOrder(Order* order, uint32_t timestamp) {
   std::lock_guard<std::mutex> lg(orderbookLock);
   PL_MAP& levels = _sameSide(order->side);
   levels[order->price]->totalQty-=order->qty;
-  order->cancel(client);
+  order->qty = 0;
+  Output::OrderDeleted(order->ID, true, timestamp);
 }

@@ -40,6 +40,6 @@ class Orderbook {
 
     void print() const;
 
-    void createOrder(Order* const);
-    void cancelOrder(Order* const, t_client client);
+    void createOrder(Order* const, uint32_t);
+    void cancelOrder(Order* const, uint32_t);
 };

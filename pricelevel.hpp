@@ -14,8 +14,8 @@ class PriceLevel {
     PriceLevel();
 
     void add(Order*);
-    void fill(Order*);
+    void fill(Order*, const uint32_t);
 
     void addAsync(Order*);
-    void fillAsync(Order*, t_qty);
+    void fillAsync(Order*, t_qty, const uint32_t);
 };

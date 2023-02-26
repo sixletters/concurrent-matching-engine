@@ -1,10 +1,11 @@
 #include <iostream>
 #include <thread>
+#include <atomic>
 
 #include "io.hpp"
 #include "engine.hpp"
 
-uint32_t TIMESTAMP = 0;
+std::atomic<uint32_t> TIMESTAMP = 0;
 
 void Engine::accept(ClientConnection connection)
 {
@@ -29,22 +30,30 @@ void Engine::connection_thread(ClientConnection connection, t_client client)
 		switch(input.type)
 		{
 			case input_cancel: {
-				SyncCerr {} << "Got cancel: ID: " << input.order_id << std::endl;
+				// increment timestamp
+				TIMESTAMP.fetch_add(1, std::memory_order_relaxed);
 
+				// if ID not found || wrong client || done
 				auto it = allOrders.find(input.order_id);
-				if (it == allOrders.end()) {
-					Output::OrderDeleted(input.order_id, false, TIMESTAMP++);
+				Order* order = it->second;
+				if (it == allOrders.end() || order->client != client || order->qty == 0) {
+					Output::OrderDeleted(input.order_id, false, TIMESTAMP);
 					break;
 				};
 
-				Order* order = it->second;
 				Orderbook* ob = instrumentToOrderbookMap[order->instrument];
-				// ob->print();
-				ob->cancelOrder(order, client);
+
+				auto func = [](Orderbook* ob, Order* order, auto t){
+					ob->cancelOrder(order, t);
+				};
+				auto thread = std::thread(func, ob, order, TIMESTAMP);
+				thread.detach();
 				break;
 			}
 
 			case input_buy: case input_sell: {
+				// increment timestamp
+				TIMESTAMP.fetch_add(1, std::memory_order_relaxed);
 
 				Order* newOrder = new Order(client, input.order_id, SIDE(input.type), input.instrument, input.count, input.price);
 				// newOrder.print()
@@ -58,10 +67,10 @@ void Engine::connection_thread(ClientConnection connection, t_client client)
 
 				Orderbook* ob= it->second;
 				// ob->print();
-				auto func = [](Orderbook* ob, Order* newOrder){
-					ob->createOrder(newOrder);
+				auto func = [](Orderbook* ob, Order* newOrder, auto t){
+					ob->createOrder(newOrder, t);
 				};
-				auto thread = std::thread(func, ob, newOrder);
+				auto thread = std::thread(func, ob, newOrder, TIMESTAMP);
 				thread.detach();
 				break;
 			}
