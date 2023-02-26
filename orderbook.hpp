@@ -15,15 +15,15 @@ struct PriceComp {
   };
 };
 
-using PL_MAP = std::map<t_price, PriceLevel*, PriceComp>;
+using PRICELEVELMAP = std::map<t_price, PriceLevel*, PriceComp>;
 
 class Orderbook {
   private:
-    PL_MAP _bids;
-    PL_MAP _asks;
+    PRICELEVELMAP _bids;
+    PRICELEVELMAP _asks;
 
-    PL_MAP& _sameSide(const SIDE side);
-    PL_MAP& _oppSide(const SIDE side);
+    PRICELEVELMAP& _sameSide(const SIDE side);
+    PRICELEVELMAP& _oppSide(const SIDE side);
 
   public:
     FIFOMutex orderbookLock;

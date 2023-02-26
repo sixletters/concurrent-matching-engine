@@ -19,7 +19,7 @@ void Orderbook::print() const {
   }
 }
 
-PL_MAP& Orderbook::_oppSide(const SIDE side) {
+PRICELEVELMAP& Orderbook::_oppSide(const SIDE side) {
   switch (side) {
     case SIDE::BUY: return _asks;
     case SIDE::SELL: return _bids;
@@ -27,7 +27,7 @@ PL_MAP& Orderbook::_oppSide(const SIDE side) {
   }
 }
 
-PL_MAP& Orderbook::_sameSide(const SIDE side) {
+PRICELEVELMAP& Orderbook::_sameSide(const SIDE side) {
   switch (side) {
     case SIDE::BUY: return _bids;
     case SIDE::SELL: return _asks;
@@ -39,11 +39,11 @@ void Orderbook::createOrder(Order* const newOrder, uint32_t timestamp) {
   std::lock_guard<FIFOMutex> lg(orderbookLock);
   // match order
   {
-    PL_MAP& levels = _oppSide(newOrder->side);
-    auto it = levels.begin();
-    while (it != levels.end() && newOrder->canMatchPrice(it->first)) {
-      PriceLevel* pl = it->second;
-      pl->fill(newOrder, timestamp++);
+    PRICELEVELMAP& levelsMap = _oppSide(newOrder->side);
+    auto it = levelsMap.begin();
+    while (it != levelsMap.end() && newOrder->canMatchPrice(it->first)) {
+      PriceLevel* level = it->second;
+      level->fill(newOrder, timestamp++);
       if (newOrder->qty == 0) return;
       it++;
     }
@@ -51,20 +51,20 @@ void Orderbook::createOrder(Order* const newOrder, uint32_t timestamp) {
 
   // insert order if qty > 0
   {
-    PL_MAP& levels = _sameSide(newOrder->side);
-    auto it = levels.find(newOrder->price);
-    if (it != levels.end()) { // if price level exists
+    PRICELEVELMAP& levelsMap = _sameSide(newOrder->side);
+    auto it = levelsMap.find(newOrder->price);
+    if (it != levelsMap.end()) { // if price level exists
       it->second->add(newOrder, timestamp); 
     } else { // create new level
       auto level = new PriceLevel();
       level->add(newOrder, timestamp);
-      levels.insert(std::pair{newOrder->price, level});
+      levelsMap.insert(std::pair{newOrder->price, level});
     } 
   }
 }
 
 void Orderbook::cancelOrder(Order* order, uint32_t timestamp) {
   std::lock_guard<FIFOMutex> lg(orderbookLock);
-  PriceLevel* pl = _sameSide(order->side)[order->price];
-  pl->cancel(order, timestamp);
+  PriceLevel* level = _sameSide(order->side)[order->price];
+  level->cancel(order, timestamp);
 }
