@@ -25,14 +25,14 @@ void Engine::connection_thread(ClientConnection connection, t_client client)
 			case ReadResult::Success: break;
 		}
 
+		
+		TIMESTAMP.fetch_add(1, std::memory_order_seq_cst);
+
 		// Functions for printing output actions in the prescribed format are
 		// provided in the Output class:
 		switch(input.type)
 		{
-			case input_cancel: {
-				// increment timestamp
-				TIMESTAMP.fetch_add(1, std::memory_order_relaxed);
-
+			case input_cancel: { 
 				// if ID not found || wrong client || done
 				auto it = allOrders.find(input.order_id);
 				Order* order = it->second;
@@ -52,8 +52,6 @@ void Engine::connection_thread(ClientConnection connection, t_client client)
 			}
 
 			case input_buy: case input_sell: {
-				// increment timestamp
-				TIMESTAMP.fetch_add(1, std::memory_order_relaxed);
 
 				Order* newOrder = new Order(client, input.order_id, SIDE(input.type), input.instrument, input.count, input.price);
 				// newOrder.print()

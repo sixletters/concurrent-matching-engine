@@ -3,7 +3,7 @@
 #include <vector>
 #include <map>
 #include <unordered_map>
-#include <mutex>
+#include "fifomutex.hpp"
 #include "order.hpp"
 #include "types.hpp"
 #include "pricelevel.hpp"
@@ -27,7 +27,7 @@ class Orderbook {
     PL_MAP& _oppSide(const SIDE side);
 
   public:
-    std::mutex orderbookLock;
+    FIFOMutex orderbookLock;
     const std::string instrument;
 
     explicit Orderbook(const std::string);
