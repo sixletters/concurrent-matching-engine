@@ -22,7 +22,7 @@ void Engine::connection_thread(ClientConnection connection, t_client client)
 		switch(connection.readInput(input))
 		{
 			case ReadResult::Error: SyncCerr {} << "Error reading input" << std::endl;
-			case ReadResult::EndOfFile: { std::this_thread::sleep_for(std::chrono::seconds(5)); return;};
+			case ReadResult::EndOfFile: return;
 			case ReadResult::Success: break;
 		}
 
