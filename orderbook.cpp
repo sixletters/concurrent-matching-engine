@@ -8,15 +8,16 @@ void Orderbook::print() const {
   std::string output = "";
   {
     for (auto it = _asks.rbegin(); it != _asks.rend(); it++) {
-      output += "$" + std::to_string(it->first) + " x " + it->second->str();
+      output += "$" + std::to_string(it->first) + " x " + it->second->str() + ", ";
     }
   }
-    SyncCerr {} << "----------------------\n";
+    output += " | ";
   {
     for (auto it = _bids.begin(); it != _bids.end(); it++) {
-      output += "$" + std::to_string(it->first) + " x " + it->second->str();
+      output += "$" + std::to_string(it->first) + " x " + it->second->str() + ", ";
     }
   }
+  SyncCerr {} << output;
 }
 
 PRICELEVELMAP& Orderbook::_oppSide(const SIDE side) {
