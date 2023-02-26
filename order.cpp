@@ -9,10 +9,12 @@ Order::Order( const t_client _client, const t_orderid _id, const SIDE _side, con
               ID(_id), client(_client), price(_price), side(_side), instrument(_instrument){
     qty = _qty;
     executionID = 0;
+}
 
+void Order::print() const {
     SyncCerr {}
-        << "Got order: " << static_cast<char>(_side) << " " << _instrument << " x " << _qty << " @ "
-        << _price << " ID: " << _id << std::endl;
+        << "Got order: " << static_cast<char>(side) << " " << instrument << " x " << qty << " @ "
+        << price << " ID: " << ID << std::endl;
 }
 
 void Order::cancel(const t_client _client) {

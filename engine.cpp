@@ -47,6 +47,7 @@ void Engine::connection_thread(ClientConnection connection, t_client client)
 			case input_buy: case input_sell: {
 
 				Order* newOrder = new Order(client, input.order_id, SIDE(input.type), input.instrument, input.count, input.price);
+				// newOrder.print()
 				allOrders[input.order_id] = newOrder;
 
 				auto it = instrumentToOrderbookMap.find(input.instrument);
