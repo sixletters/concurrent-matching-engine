@@ -26,14 +26,15 @@ void PriceLevel::fillAsync(Order* const newOrder, t_qty levelFillQty, const uint
   queue.getFrontMutex()->unlock();
 }
 
-void PriceLevel::add(Order* newOrder) {
+void PriceLevel::add(Order* newOrder, const uint32_t timestamp) {
   totalQty += newOrder->qty; 
   queue.getBackMutex()->lock();
-	auto thread = std::thread(&PriceLevel::addAsync, this, newOrder);
+	auto thread = std::thread(&PriceLevel::addAsync, this, newOrder, timestamp);
 	thread.detach();
 }
 
-void PriceLevel::addAsync(Order* newOrder) { 
-  queue.push(newOrder);
+void PriceLevel::addAsync(Order* newOrder, const uint32_t timestamp) { 
+  queue.push(newOrder); 
+  Output::OrderAdded(newOrder->ID, newOrder->instrument.c_str(), newOrder->price, newOrder->qty, newOrder->side == SIDE::SELL, timestamp);
   queue.getBackMutex()->unlock();
 }

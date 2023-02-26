@@ -55,20 +55,19 @@ void Orderbook::createOrder(Order* const newOrder, uint32_t timestamp) {
     PL_MAP& levels = _sameSide(newOrder->side);
     auto it = levels.find(newOrder->price);
     if (it != levels.end()) { // if price level exists
-      it->second->add(newOrder); 
+      it->second->add(newOrder, timestamp); 
     } else { // create new level
       auto level = new PriceLevel();
-      level->add(newOrder);
+      level->add(newOrder, timestamp);
       levels.insert(std::pair{newOrder->price, level});
-    }
-    Output::OrderAdded(newOrder->ID, instrument.c_str(), newOrder->price, newOrder->qty, newOrder->side == SIDE::SELL, timestamp);
+    } 
   }
 }
 
 void Orderbook::cancelOrder(Order* order, uint32_t timestamp) {
   std::lock_guard<FIFOMutex> lg(orderbookLock);
   PriceLevel* pl = _sameSide(order->side)[order->price];
-  std::lock_guard<std::mutex> lg(*(pl->queue.getFrontMutex())); // make sure no other thread is filling
+  std::lock_guard<std::mutex> lgfront(*(pl->queue.getFrontMutex())); // make sure no other thread is filling
   if (order->qty == 0) { // if done
     Output::OrderDeleted(order->ID, false, timestamp);
     return;
