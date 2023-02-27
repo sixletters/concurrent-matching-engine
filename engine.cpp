@@ -10,8 +10,8 @@ Engine::Engine() : client{0}, timestamp{0} {};
 
 void Engine::accept(ClientConnection connection) {
 	t_client clientNum = client.fetch_add(1, std::memory_order_seq_cst);
-	auto thread = std::thread(&Engine::connection_thread, this, std::move(connection), clientNum);
-	thread.detach();
+	auto th = std::thread(&Engine::connection_thread, this, std::move(connection), clientNum);
+	th.detach();
 }
 
 void Engine::connection_thread(ClientConnection connection, t_client client) {
@@ -19,14 +19,11 @@ void Engine::connection_thread(ClientConnection connection, t_client client) {
 		ClientCommand input {};
 
 		{
-			std::mutex readMutex; // local mutex won't block other threads if invalid input
-
-			std::unique_lock<std::mutex> readLock(readMutex);
-			if (connection.readInput(input) != ReadResult::Success) return;
-
-			// lock engine on valid input
+			std::mutex readMutex; std::lock_guard<std::mutex> readLock(readMutex); 
+			// local mutex won't block other threads if invalid input 
+			if (connection.readInput(input) != ReadResult::Success) return; 
+			// immediately lock engine on valid input
 			std::lock_guard<FIFOMutex> lg(engineMutex); 
-			readLock.unlock();
 			uint32_t refTime = timestamp++;
 
 			switch (input.type) {
@@ -40,8 +37,8 @@ void Engine::connection_thread(ClientConnection connection, t_client client) {
 					};
 
 					Orderbook* ob = instrumentToOrderbookMap[order->instrument]; 
-					std::thread t = std::thread(&Orderbook::cancelOrder, ob, order, refTime);
-					t.detach();
+					auto th = std::thread(&Orderbook::cancelOrder, ob, order, refTime);
+					th.detach();
 					break;
 				}
 
@@ -58,8 +55,8 @@ void Engine::connection_thread(ClientConnection connection, t_client client) {
 					}
 
 					Orderbook* ob= it->second;
-					std::thread t = std::thread(&Orderbook::createOrder, ob, newOrder, refTime);
-					t.detach();
+					auto th = std::thread(&Orderbook::createOrder, ob, newOrder, refTime);
+					th.detach();
 					break;
 				}
 			}

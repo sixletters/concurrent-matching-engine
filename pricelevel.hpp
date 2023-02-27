@@ -1,6 +1,6 @@
+#include <string>
 #include "queue.hpp"
 #include "order.hpp"
-#include <string>
 
 class PriceLevel {
   public:
