@@ -21,12 +21,12 @@ void Engine::connection_thread(ClientConnection connection, t_client client) {
 		{
 			std::mutex readMutex; // local mutex won't block other threads if invalid input
 
-			std::unique_lock<std::mutex> lk(readMutex);
+			std::unique_lock<std::mutex> readLock(readMutex);
 			if (connection.readInput(input) != ReadResult::Success) return;
 
 			// lock engine on valid input
 			std::lock_guard<FIFOMutex> lg(engineMutex); 
-			lk.unlock();
+			readLock.unlock();
 			uint32_t refTime = timestamp++;
 
 			switch (input.type) {
