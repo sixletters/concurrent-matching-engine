@@ -4,7 +4,7 @@
 
 PriceLevel::PriceLevel() : totalQty(0) {};
 
-void PriceLevel::fill(Order* const newOrder, t_qty levelFillQty, const uint32_t timestamp) { 
+void PriceLevel::fill(Order* const newOrder, t_qty levelFillQty, const uint32_t t) { 
   Order* restingOrder;
   while (levelFillQty > 0) {
     restingOrder = queue.front();
@@ -12,15 +12,15 @@ void PriceLevel::fill(Order* const newOrder, t_qty levelFillQty, const uint32_t 
     levelFillQty -= fillQty;
     restingOrder->qty -= fillQty;
     restingOrder->executionID++;
-    Output::OrderExecuted(restingOrder->ID, newOrder->ID, restingOrder->executionID, restingOrder->price, fillQty, timestamp);
+    Output::OrderExecuted(restingOrder->ID, newOrder->ID, restingOrder->executionID, restingOrder->price, fillQty, t);
     if (restingOrder->qty == 0) queue.pop();
   }
   queue.unlockFront();
 }
 
-void PriceLevel::add(Order* newOrder, const uint32_t timestamp) { 
+void PriceLevel::add(Order* newOrder, const uint32_t t) { 
   queue.push(newOrder); 
-  Output::OrderAdded(newOrder->ID, newOrder->instrument.c_str(), newOrder->price, newOrder->qty, newOrder->side == SIDE::SELL, timestamp);
+  Output::OrderAdded(newOrder->ID, newOrder->instrument.c_str(), newOrder->price, newOrder->qty, newOrder->side == SIDE::SELL, t);
   queue.unlockBack();
 }
 

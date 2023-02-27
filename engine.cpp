@@ -23,8 +23,7 @@ void Engine::connection_thread(ClientConnection connection, t_client client) {
 			// local mutex won't block other threads if invalid input 
 			if (connection.readInput(input) != ReadResult::Success) return; 
 			// immediately lock engine on valid input
-			std::lock_guard<FIFOMutex> lg(engineMutex); 
-			uint32_t refTime = timestamp++;
+			std::lock_guard<FIFOMutex> lg(engineMutex); timestamp++;
 
 			switch (input.type) {
 				case input_cancel: { 
@@ -32,12 +31,12 @@ void Engine::connection_thread(ClientConnection connection, t_client client) {
 					auto it = allOrdersMap.find(input.order_id);
 					Order* order = it->second;
 					if (it == allOrdersMap.end() || order->client != client) {
-						Output::OrderDeleted(input.order_id, false, refTime);
+						Output::OrderDeleted(input.order_id, false, timestamp);
 						break;
 					};
 
 					Orderbook* ob = instrumentToOrderbookMap[order->instrument]; 
-					auto th = std::thread(&Orderbook::cancelOrder, ob, order, refTime);
+					auto th = std::thread(&Orderbook::cancelOrder, ob, order, timestamp);
 					th.detach();
 					break;
 				}
@@ -55,7 +54,7 @@ void Engine::connection_thread(ClientConnection connection, t_client client) {
 					}
 
 					Orderbook* ob= it->second;
-					auto th = std::thread(&Orderbook::createOrder, ob, newOrder, refTime);
+					auto th = std::thread(&Orderbook::createOrder, ob, newOrder, timestamp);
 					th.detach();
 					break;
 				}

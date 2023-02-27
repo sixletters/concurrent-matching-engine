@@ -39,6 +39,6 @@ class Orderbook {
 
     void print() const;
 
-    void createOrder(Order* const, uint32_t);
-    void cancelOrder(Order* const, uint32_t);
+    void createOrder(Order* const, const uint32_t);
+    void cancelOrder(Order* const, const uint32_t);
 };

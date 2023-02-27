@@ -39,7 +39,8 @@ PRICELEVELMAP& Orderbook::_sameSide(const SIDE side) {
 }
 
 // parallel
-void Orderbook::createOrder(Order* const newOrder, uint32_t timestamp) {
+void Orderbook::createOrder(Order* const newOrder, const uint32_t engineTimestamp) {
+  uint32_t idx = 0;
   std::lock_guard<FIFOMutex> orderbookLock(orderbookMutex);
   // match order
   {
@@ -51,7 +52,7 @@ void Orderbook::createOrder(Order* const newOrder, uint32_t timestamp) {
       level->totalQty -= fillQty; newOrder->qty -= fillQty;
 
       level->queue.lockFront();
-      auto th = std::thread(&PriceLevel::fill, level, newOrder, fillQty, timestamp);
+      auto th = std::thread(&PriceLevel::fill, level, newOrder, fillQty, idx++);
       th.detach();
 
       if (newOrder->qty == 0) return;
@@ -71,23 +72,23 @@ void Orderbook::createOrder(Order* const newOrder, uint32_t timestamp) {
     level->totalQty += newOrder->qty;
 
     level->queue.lockBack(); 
-    auto th = std::thread(&PriceLevel::add, level, newOrder, timestamp);
+    auto th = std::thread(&PriceLevel::add, level, newOrder, idx++);
     th.detach();
   } 
   // print();
 }
 
 // sequential
-void Orderbook::cancelOrder(Order* order, uint32_t timestamp) {
+void Orderbook::cancelOrder(Order* const order, const uint32_t engineTimestamp) {
   std::lock_guard<FIFOMutex> orderbookLock(orderbookMutex);
   PriceLevel* level = _sameSide(order->side)[order->price];
   std::lock_guard<std::mutex> lg(level->queue.frontMutex); // ensure no other thead is filling
   if (order->qty == 0) { 
-    Output::OrderDeleted(order->ID, false, timestamp);
+    Output::OrderDeleted(order->ID, false, engineTimestamp);
   } else {
     level->totalQty -= order->qty;
     order->qty = 0;
-    Output::OrderDeleted(order->ID, true, timestamp);
+    Output::OrderDeleted(order->ID, true, engineTimestamp);
   } 
   // print();
 }
