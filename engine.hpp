@@ -5,27 +5,23 @@
 #define ENGINE_HPP
 
 #include <chrono>
+#include <atomic>
 #include <unordered_map>
 
 #include "io.hpp"
 #include "orderbook.hpp"
 
-struct Engine
-{
-public:
+class Engine {
+  public:
 	void accept(ClientConnection);
+	Engine();
 
-private:
+  private:
 	t_client client;
-  std::unordered_map<t_orderid, Order*> allOrders; 
-	void connection_thread(ClientConnection, t_client);
+	std::atomic<uint32_t> timestamp;
+  	std::unordered_map<t_orderid, Order*> allOrders; 
 	std::unordered_map<std::string, Orderbook*> instrumentToOrderbookMap;
-
+	void connection_thread(ClientConnection, t_client); 
 };
-
-inline std::chrono::microseconds::rep getCurrentTimestamp() noexcept
-{
-	return std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now().time_since_epoch()).count();
-}
 
 #endif

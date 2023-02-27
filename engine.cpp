@@ -1,38 +1,36 @@
 #include <iostream>
 #include <thread>
-#include <atomic>
-#include <chrono>
+#include <mutex>
 
 #include "io.hpp"
 #include "engine.hpp"
 
-std::atomic<uint32_t> TIMESTAMP{0};
+Engine::Engine() : client{0}, timestamp{0} {};
 
-void Engine::accept(ClientConnection connection)
-{
+
+void Engine::accept(ClientConnection connection) {
 	auto thread = std::thread(&Engine::connection_thread, this, std::move(connection), client++);
 	thread.detach();
 }
 
-void Engine::connection_thread(ClientConnection connection, t_client client)
-{
-	while(true)
-	{
+void Engine::connection_thread(ClientConnection connection, t_client client) {
+	// std::mutex m;
+	while(true) {
+		// std::lock_guard<std::mutex> lg(m);
+
 		ClientCommand input {};
-		switch(connection.readInput(input))
-		{
+		switch(connection.readInput(input)) {
 			case ReadResult::Error: SyncCerr {} << "Error reading input" << std::endl;
 			case ReadResult::EndOfFile: return;
 			case ReadResult::Success: break;
 		}
 
 		
-		uint32_t refTime = TIMESTAMP.fetch_add(1, std::memory_order_seq_cst);
+		uint32_t refTime = timestamp.fetch_add(1, std::memory_order_seq_cst);
 
 		// Functions for printing output actions in the prescribed format are
 		// provided in the Output class:
-		switch(input.type)
-		{
+		switch(input.type) {
 			case input_cancel: { 
 				// if ID not found || wrong client || done
 				auto it = allOrders.find(input.order_id);
@@ -43,7 +41,7 @@ void Engine::connection_thread(ClientConnection connection, t_client client)
 				};
 
 				Orderbook* ob = instrumentToOrderbookMap[order->instrument]; 
-				std::thread t = std::thread(&Orderbook::cancelOrder, ob, order, TIMESTAMP.load());
+				std::thread t = std::thread(&Orderbook::cancelOrder, ob, order, refTime);
 				t.detach();
 				break;
 			}
