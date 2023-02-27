@@ -1,4 +1,5 @@
 #include <string>
+#include <vector>
 #include "queue.hpp"
 #include "order.hpp"
 
@@ -8,7 +9,6 @@ class PriceLevel {
     t_qty totalQty;
     PriceLevel();
 
-    void add(Order*, const uint32_t);
-    void fill(Order*, t_qty, const uint32_t);
-    void cancel(Order*, const uint32_t);
+    std::vector<std::string>* add(Order*, const uint32_t);
+    std::vector<std::string>* fill(Order*, t_qty, const uint32_t);
 };

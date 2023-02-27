@@ -1,8 +1,8 @@
 #include <stdexcept>
 #include <vector>
+#include <future>
 #include <sstream>
 #include "orderbook.hpp"
-#include "syncio.hpp"
 
 Orderbook::Orderbook(const std::string _instrument) : _bids(false), _asks(true), instrument(_instrument) {}
 
@@ -44,9 +44,7 @@ PRICELEVELMAP& Orderbook::_sameSide(const SIDE side) {
 // parallel
 void Orderbook::createOrder(Order* const newOrder, const uint32_t engineTimestamp) {
   uint32_t idx = 0;
-  std::vector<std::thread> threads;
-  std::vector<std::vector<std::string>> outputs;
-  SyncIO syncoutput();
+  std::vector<std::future<std::vector<std::string>*>> futures;
   {
     std::lock_guard<FIFOMutex> orderbookLock(orderbookMutex);
     // match order 
@@ -59,8 +57,8 @@ void Orderbook::createOrder(Order* const newOrder, const uint32_t engineTimestam
         level->totalQty -= fillQty; newOrder->qty -= fillQty;
 
         level->queue.lockFront();
-        auto th = std::thread(&PriceLevel::fill, level, newOrder, fillQty, idx++);
-        threads.push_back(std::move(th));
+        auto fut = std::async(&PriceLevel::fill, level, newOrder, fillQty, idx++);
+        futures.push_back(fut);
 
         if (newOrder->qty == 0) goto finish;
       }
@@ -79,16 +77,17 @@ void Orderbook::createOrder(Order* const newOrder, const uint32_t engineTimestam
       level->totalQty += newOrder->qty;
 
       level->queue.lockBack(); 
-      auto th = std::thread(&PriceLevel::add, level, newOrder, idx++);
-      threads.push_back(std::move(th));
+      auto fut = std::async(&PriceLevel::add, level, newOrder, idx++);
+      futures.push_back(fut);
     } 
   }
 
   finish:
   {
     int i = 0;
-    for (std::thread& th : threads) { 
-      for (std::string& s : outputs[i++]) { SyncCout{} << s << std::endl; } 
+    for (auto& fut : futures) { 
+      auto strings = fut.get();
+      for (std::string& s : *strings) SyncCout{} << s << std::endl; 
     }
   }
 }

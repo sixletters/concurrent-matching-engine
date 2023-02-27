@@ -5,7 +5,8 @@
 
 PriceLevel::PriceLevel() : totalQty(0) {};
 
-void PriceLevel::fill(Order* const newOrder, t_qty levelFillQty, const uint32_t t) { 
+std::vector<std::string>* PriceLevel::fill(Order* const newOrder, t_qty levelFillQty, const uint32_t t) { 
+  std::vector<std::string>* output = new std::vector<std::string>();
   Order* restingOrder;
   while (levelFillQty > 0) {
     restingOrder = queue.front();
@@ -13,16 +14,20 @@ void PriceLevel::fill(Order* const newOrder, t_qty levelFillQty, const uint32_t 
     levelFillQty -= fillQty;
     restingOrder->qty -= fillQty;
     restingOrder->executionID++;
-    OrderExecuted(restingOrder, newOrder, fillQty, t);
+    output->push_back(
+      OrderExecuted(restingOrder, newOrder, fillQty, t));
     if (restingOrder->qty == 0) queue.pop();
   }
   queue.unlockFront();
+  return output;
 }
 
-void PriceLevel::add(Order* newOrder, const uint32_t t) { 
+std::vector<std::string>* PriceLevel::add(Order* newOrder, const uint32_t t) { 
+  std::vector<std::string>* output = new std::vector<std::string>();
   queue.push(newOrder); 
-  OrderAdded(newOrder, t);
+  output->push_back(OrderAdded(newOrder, t));
   queue.unlockBack();
+  return output;
 }
 
 std::string OrderAdded(Order* order, uint32_t timestamp) {
