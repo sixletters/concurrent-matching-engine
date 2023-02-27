@@ -43,7 +43,6 @@ PRICELEVELMAP& Orderbook::_sameSide(const SIDE side) {
 
 // parallel
 void Orderbook::createOrder(Order* const newOrder, const uint32_t engineTimestamp) {
-  uint32_t idx = 0;
   std::vector<std::future<std::vector<std::string>*>> futures;
   {
     std::lock_guard<FIFOMutex> orderbookLock(orderbookMutex);
@@ -57,8 +56,8 @@ void Orderbook::createOrder(Order* const newOrder, const uint32_t engineTimestam
         level->totalQty -= fillQty; newOrder->qty -= fillQty;
 
         level->queue.lockFront();
-        auto fut = std::async(&PriceLevel::fill, level, newOrder, fillQty, idx++);
-        futures.push_back(fut);
+        auto fut = std::async(&PriceLevel::fill, level, newOrder, fillQty, engineTimestamp);
+        futures.push_back(std::move(fut));
 
         if (newOrder->qty == 0) goto finish;
       }
@@ -77,14 +76,13 @@ void Orderbook::createOrder(Order* const newOrder, const uint32_t engineTimestam
       level->totalQty += newOrder->qty;
 
       level->queue.lockBack(); 
-      auto fut = std::async(&PriceLevel::add, level, newOrder, idx++);
-      futures.push_back(fut);
+      auto fut = std::async(&PriceLevel::add, level, newOrder, engineTimestamp);
+      futures.push_back(std::move(fut));
     } 
   }
 
   finish:
   {
-    int i = 0;
     for (auto& fut : futures) { 
       auto strings = fut.get();
       for (std::string& s : *strings) SyncCout{} << s << std::endl; 

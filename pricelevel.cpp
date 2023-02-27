@@ -14,8 +14,11 @@ std::vector<std::string>* PriceLevel::fill(Order* const newOrder, t_qty levelFil
     levelFillQty -= fillQty;
     restingOrder->qty -= fillQty;
     restingOrder->executionID++;
-    output->push_back(
-      OrderExecuted(restingOrder, newOrder, fillQty, t));
+
+    std::stringstream ss;
+    ss << "E " << restingOrder->ID << " " << newOrder->ID << "" << restingOrder->executionID << " " << restingOrder->price << " " << fillQty << " " << t;
+    output->push_back(ss.str());
+
     if (restingOrder->qty == 0) queue.pop();
   }
   queue.unlockFront();
@@ -25,30 +28,12 @@ std::vector<std::string>* PriceLevel::fill(Order* const newOrder, t_qty levelFil
 std::vector<std::string>* PriceLevel::add(Order* newOrder, const uint32_t t) { 
   std::vector<std::string>* output = new std::vector<std::string>();
   queue.push(newOrder); 
-  output->push_back(OrderAdded(newOrder, t));
+
+  std::stringstream ss;
+  ss << (newOrder->side == SIDE::SELL ? "S " : "B " ) << newOrder->ID << " " << newOrder->instrument << " " << newOrder->price << " " << newOrder->qty << " " << t;
+  output->push_back(ss.str());
+
   queue.unlockBack();
   return output;
 }
 
-std::string OrderAdded(Order* order, uint32_t timestamp) {
-  std::stringstream ss;
-  ss << (order->side == SIDE::SELL ? "S " : "B " ) //
-    << (order->ID) << " " //
-    << (order->instrument) << " " //
-    << (order->price) << " " //
-    << (order->qty) << " " //
-    << (timestamp); //
-  return ss.str();
-}
-
-std::string OrderExecuted(Order* resting, Order* incoming, t_qty qty, uint32_t timestamp){
-  std::stringstream ss;
-  ss << "E " //
-    << (resting->ID) << " " //
-    << (incoming->ID) << " " //
-    << (resting->executionID) << " " //
-    << (resting->price) << " " //
-    << (qty) << " " //
-    << (timestamp); //
-  return ss.str();
-}
