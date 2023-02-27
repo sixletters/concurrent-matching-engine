@@ -16,6 +16,7 @@ void PriceLevel::fill(Order* const newOrder, const uint32_t timestamp) {
 void PriceLevel::fillAsync(Order* const newOrder, t_qty levelFillQty, const uint32_t timestamp) { 
   Order* restingOrder;
   while (levelFillQty > 0) {
+    if (queue.empty()) { std::lock_guard<std::mutex>(queue.getBackMutex()); }
     restingOrder = queue.front();
     t_qty fillQty = std::min(levelFillQty, restingOrder->qty);
     levelFillQty -= fillQty;

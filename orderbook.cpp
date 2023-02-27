@@ -63,12 +63,12 @@ void Orderbook::createOrder(Order* const newOrder, uint32_t timestamp) {
       levelsMap.insert(std::pair{newOrder->price, level});
     } 
   }
-  print();
+  // print();
 }
 
 void Orderbook::cancelOrder(Order* order, uint32_t timestamp) {
   std::lock_guard<FIFOMutex> lg(orderbookMutex);
   PriceLevel* level = _sameSide(order->side)[order->price];
   level->cancel(order, timestamp);
-  print();
+  // print();
 }
