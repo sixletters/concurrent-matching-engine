@@ -38,7 +38,7 @@ PRICELEVELMAP& Orderbook::_sameSide(const SIDE side) {
 }
 
 void Orderbook::createOrder(Order* const newOrder, uint32_t timestamp) {
-  std::lock_guard<FIFOMutex> lg(orderbookLock);
+  std::lock_guard<FIFOMutex> lg(orderbookMutex);
   // match order
   {
     PRICELEVELMAP& levelsMap = _oppSide(newOrder->side);
@@ -67,7 +67,7 @@ void Orderbook::createOrder(Order* const newOrder, uint32_t timestamp) {
 }
 
 void Orderbook::cancelOrder(Order* order, uint32_t timestamp) {
-  std::lock_guard<FIFOMutex> lg(orderbookLock);
+  std::lock_guard<FIFOMutex> lg(orderbookMutex);
   PriceLevel* level = _sameSide(order->side)[order->price];
   level->cancel(order, timestamp);
   print();

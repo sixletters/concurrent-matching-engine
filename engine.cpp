@@ -1,5 +1,6 @@
 #include <iostream>
 #include <thread>
+#include <mutex>
 
 #include "io.hpp"
 #include "engine.hpp"
@@ -8,7 +9,8 @@ Engine::Engine() : client{0}, timestamp{0} {};
 
 
 void Engine::accept(ClientConnection connection) {
-	auto thread = std::thread(&Engine::connection_thread, this, std::move(connection), client++);
+	t_client clientNum = client.fetch_add(1, std::memory_order_seq_cst);
+	auto thread = std::thread(&Engine::connection_thread, this, std::move(connection), clientNum);
 	thread.detach();
 }
 
@@ -17,10 +19,15 @@ void Engine::connection_thread(ClientConnection connection, t_client client) {
 		ClientCommand input {};
 
 		{
-			std::lock_guard<FIFOMutex> lg(m); 
+			std::mutex readMutex; // local mutex won't block other threads if invalid input
+
+			std::unique_lock<std::mutex> lk(readMutex);
 			if (connection.readInput(input) != ReadResult::Success) return;
 
-			uint32_t refTime = timestamp.fetch_add(1, std::memory_order_seq_cst);
+			// lock engine on valid input
+			std::lock_guard<FIFOMutex> lg(engineMutex); 
+			lk.unlock();
+			uint32_t refTime = timestamp++;
 
 			switch (input.type) {
 				case input_cancel: { 

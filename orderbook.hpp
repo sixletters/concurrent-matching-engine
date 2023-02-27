@@ -26,7 +26,7 @@ class Orderbook {
     PRICELEVELMAP& _oppSide(const SIDE side);
 
   public:
-    FIFOMutex orderbookLock;
+    FIFOMutex orderbookMutex;
     const std::string instrument;
 
     explicit Orderbook(const std::string);
