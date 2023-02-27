@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <thread>
+#include <sstream>
 #include "pricelevel.hpp"
 
 PriceLevel::PriceLevel() : totalQty(0) {};
@@ -12,7 +13,7 @@ void PriceLevel::fill(Order* const newOrder, t_qty levelFillQty, const uint32_t 
     levelFillQty -= fillQty;
     restingOrder->qty -= fillQty;
     restingOrder->executionID++;
-    Output::OrderExecuted(restingOrder->ID, newOrder->ID, restingOrder->executionID, restingOrder->price, fillQty, t);
+    OrderExecuted(restingOrder, newOrder, fillQty, t);
     if (restingOrder->qty == 0) queue.pop();
   }
   queue.unlockFront();
@@ -20,10 +21,29 @@ void PriceLevel::fill(Order* const newOrder, t_qty levelFillQty, const uint32_t 
 
 void PriceLevel::add(Order* newOrder, const uint32_t t) { 
   queue.push(newOrder); 
-  Output::OrderAdded(newOrder->ID, newOrder->instrument.c_str(), newOrder->price, newOrder->qty, newOrder->side == SIDE::SELL, t);
+  OrderAdded(newOrder, t);
   queue.unlockBack();
 }
 
-std::string PriceLevel::str() const {
-  return std::to_string(totalQty);
+std::string OrderAdded(Order* order, uint32_t timestamp) {
+  std::stringstream ss;
+  ss << (order->side == SIDE::SELL ? "S " : "B " ) //
+    << (order->ID) << " " //
+    << (order->instrument) << " " //
+    << (order->price) << " " //
+    << (order->qty) << " " //
+    << (timestamp); //
+  return ss.str();
+}
+
+std::string OrderExecuted(Order* resting, Order* incoming, t_qty qty, uint32_t timestamp){
+  std::stringstream ss;
+  ss << "E " //
+    << (resting->ID) << " " //
+    << (incoming->ID) << " " //
+    << (resting->executionID) << " " //
+    << (resting->price) << " " //
+    << (qty) << " " //
+    << (timestamp); //
+  return ss.str();
 }

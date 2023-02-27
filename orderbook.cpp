@@ -1,25 +1,28 @@
-#include "orderbook.hpp"
 #include <stdexcept>
 #include <vector>
+#include <sstream>
+#include "orderbook.hpp"
+#include "syncio.hpp"
 
 Orderbook::Orderbook(const std::string _instrument) : _bids(false), _asks(true), instrument(_instrument) {}
 
 /* Print orderbook state */
 void Orderbook::print() const {
-  std::string output = "[ ";
+  std::stringstream ss;
+  ss << "[ ";
   {
     for (auto it = _asks.rbegin(); it != _asks.rend(); it++) {
-      output += "$" + std::to_string(it->first) + "x" + it->second->str() + ", ";
+      ss << "$" << std::to_string(it->first) << "x" << it->second->totalQty << ", ";
     }
   }
-    output += " | ";
+    ss << " | ";
   {
     for (auto it = _bids.begin(); it != _bids.end(); it++) {
-      output += "$" + std::to_string(it->first) + "x" + it->second->str() + ", ";
+      ss << "$" << std::to_string(it->first) << "x" << it->second->totalQty << ", ";
     }
   }
-  output += "]";
-  SyncCerr {} << output << std::endl;
+  ss << "]";
+  SyncCerr {} << ss.str() << std::endl;
 }
 
 PRICELEVELMAP& Orderbook::_oppSide(const SIDE side) {
@@ -41,41 +44,53 @@ PRICELEVELMAP& Orderbook::_sameSide(const SIDE side) {
 // parallel
 void Orderbook::createOrder(Order* const newOrder, const uint32_t engineTimestamp) {
   uint32_t idx = 0;
-  std::lock_guard<FIFOMutex> orderbookLock(orderbookMutex);
-  // match order
+  std::vector<std::thread> threads;
+  std::vector<std::vector<std::string>> outputs;
+  SyncIO syncoutput();
   {
-    PRICELEVELMAP& levelsMap = _oppSide(newOrder->side);
-    for (auto it = levelsMap.begin(); it != levelsMap.end() && newOrder->canMatchPrice(it->first); it++) {
+    std::lock_guard<FIFOMutex> orderbookLock(orderbookMutex);
+    // match order 
+    {
+      PRICELEVELMAP& levelsMap = _oppSide(newOrder->side);
+      for (auto it = levelsMap.begin(); it != levelsMap.end() && newOrder->canMatchPrice(it->first); it++) {
+        PriceLevel* level = it->second;
+
+        const t_qty fillQty = std::min(newOrder->qty, level->totalQty);
+        level->totalQty -= fillQty; newOrder->qty -= fillQty;
+
+        level->queue.lockFront();
+        auto th = std::thread(&PriceLevel::fill, level, newOrder, fillQty, idx++);
+        threads.push_back(std::move(th));
+
+        if (newOrder->qty == 0) goto finish;
+      }
+    } 
+
+    // insert order if qty > 0
+    {
+      PRICELEVELMAP& levelsMap = _sameSide(newOrder->side);
+      auto it = levelsMap.find(newOrder->price);
+      if (it == levelsMap.end()) { // if price level does not exist
+        auto ret = levelsMap.insert(std::pair{newOrder->price, new PriceLevel()});
+        it = ret.first;
+      }
+
       PriceLevel* level = it->second;
+      level->totalQty += newOrder->qty;
 
-      const t_qty fillQty = std::min(newOrder->qty, level->totalQty);
-      level->totalQty -= fillQty; newOrder->qty -= fillQty;
+      level->queue.lockBack(); 
+      auto th = std::thread(&PriceLevel::add, level, newOrder, idx++);
+      threads.push_back(std::move(th));
+    } 
+  }
 
-      level->queue.lockFront();
-      auto th = std::thread(&PriceLevel::fill, level, newOrder, fillQty, idx++);
-      th.detach();
-
-      if (newOrder->qty == 0) return;
-    }
-  } 
-
-  // insert order if qty > 0
+  finish:
   {
-    PRICELEVELMAP& levelsMap = _sameSide(newOrder->side);
-    auto it = levelsMap.find(newOrder->price);
-    if (it == levelsMap.end()) { // if price level does not exist
-      auto ret = levelsMap.insert(std::pair{newOrder->price, new PriceLevel()});
-      it = ret.first;
+    int i = 0;
+    for (std::thread& th : threads) { 
+      for (std::string& s : outputs[i++]) { SyncCout{} << s << std::endl; } 
     }
-
-    PriceLevel* level = it->second;
-    level->totalQty += newOrder->qty;
-
-    level->queue.lockBack(); 
-    auto th = std::thread(&PriceLevel::add, level, newOrder, idx++);
-    th.detach();
-  } 
-  // print();
+  }
 }
 
 // sequential
