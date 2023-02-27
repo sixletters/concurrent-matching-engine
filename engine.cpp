@@ -1,6 +1,5 @@
 #include <iostream>
 #include <thread>
-#include <mutex>
 
 #include "io.hpp"
 #include "engine.hpp"
@@ -14,28 +13,24 @@ void Engine::accept(ClientConnection connection) {
 }
 
 void Engine::connection_thread(ClientConnection connection, t_client client) {
-	// std::mutex m;
 	while(true) {
-		// std::lock_guard<std::mutex> lg(m);
 
 		ClientCommand input {};
+		std::lock_guard<FIFOMutex> lg(m); 
 		switch(connection.readInput(input)) {
 			case ReadResult::Error: SyncCerr {} << "Error reading input" << std::endl;
 			case ReadResult::EndOfFile: return;
 			case ReadResult::Success: break;
 		}
 
-		
 		uint32_t refTime = timestamp.fetch_add(1, std::memory_order_seq_cst);
 
-		// Functions for printing output actions in the prescribed format are
-		// provided in the Output class:
 		switch(input.type) {
 			case input_cancel: { 
-				// if ID not found || wrong client || done
-				auto it = allOrders.find(input.order_id);
+				// if ID not found || wrong client
+				auto it = allOrdersMap.find(input.order_id);
 				Order* order = it->second;
-				if (it == allOrders.end() || order->client != client) {
+				if (it == allOrdersMap.end() || order->client != client) {
 					Output::OrderDeleted(input.order_id, false, refTime);
 					break;
 				};
@@ -50,7 +45,7 @@ void Engine::connection_thread(ClientConnection connection, t_client client) {
 
 				Order* newOrder = new Order(client, input.order_id, SIDE(input.type), input.instrument, input.count, input.price);
 				// newOrder.print()
-				allOrders[input.order_id] = newOrder;
+				allOrdersMap[input.order_id] = newOrder;
 
 				auto it = instrumentToOrderbookMap.find(input.instrument);
 				if (it == instrumentToOrderbookMap.end()) {
