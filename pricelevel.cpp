@@ -16,7 +16,7 @@ std::vector<std::string>* PriceLevel::fill(Order* const newOrder, t_qty levelFil
     restingOrder->executionID++;
 
     std::stringstream ss;
-    ss << "E " << restingOrder->ID << " " << newOrder->ID << "" << restingOrder->executionID << " " << restingOrder->price << " " << fillQty << " " << t;
+    ss << "E " << restingOrder->ID << " " << newOrder->ID << " " << restingOrder->executionID << " " << restingOrder->price << " " << fillQty << " " << t;
     output->push_back(ss.str());
 
     if (restingOrder->qty == 0) queue.pop();
@@ -36,4 +36,3 @@ std::vector<std::string>* PriceLevel::add(Order* newOrder, const uint32_t t) {
   queue.unlockBack();
   return output;
 }
-

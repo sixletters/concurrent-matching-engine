@@ -10,7 +10,7 @@ struct Order {
     const SIDE side;
     const std::string instrument;
     t_qty qty;  // remaining
-    uint8_t executionID;
+    uint32_t executionID;
 
     Order(const t_client, const t_orderid, const SIDE, const std::string instrument, const t_qty, const t_price);
     ~Order() = default;
