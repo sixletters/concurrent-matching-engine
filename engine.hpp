@@ -19,7 +19,7 @@ class Engine {
   private:
 	t_client client;
 	std::atomic<uint32_t> timestamp;
-  	std::unordered_map<t_orderid, Order*> allOrdersMap; 
+	std::unordered_map<t_orderid, Order*> allOrdersMap; 
 	std::unordered_map<std::string, Orderbook*> instrumentToOrderbookMap;
 	FIFOMutex m;
 	void connection_thread(ClientConnection, t_client); 
